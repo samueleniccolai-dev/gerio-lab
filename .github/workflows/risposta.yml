@@ -1,0 +1,45 @@
+# The human answered a question PR and added the label "risposto": start the round that reads the
+# answer (docs/METODO.md §2). pull_request_target runs the version of this file on main; nothing
+# from the PR is checked out or executed. A workflow of its own, so that it never waits behind a
+# deploy in the consegna workflow.
+name: risposta
+
+on:
+  pull_request_target:
+    types: [labeled]
+
+permissions: {}
+
+jobs:
+  avvia:
+    if: >-
+      github.event.label.name == 'risposto' &&
+      github.event.sender.login == (vars.LAB_AUTORE || 'SamueleNiccolai') &&
+      github.event.pull_request.head.repo.full_name == github.repository &&
+      startsWith(github.event.pull_request.head.ref, 'claude/giro-') &&
+      vars.LAB_ATTIVO == 'true'
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    environment: catena
+    concurrency:
+      group: risposta-${{ github.event.pull_request.number }}
+      cancel-in-progress: false
+    steps:
+      - name: Start the round that reads the answer
+        env:
+          ROUTINE_FIRE_URL: ${{ secrets.ROUTINE_FIRE_URL }}
+          ROUTINE_FIRE_TOKEN: ${{ secrets.ROUTINE_FIRE_TOKEN }}
+          PR: ${{ github.event.pull_request.number }}
+        run: |
+          if [ -z "$ROUTINE_FIRE_URL" ] || [ -z "$ROUTINE_FIRE_TOKEN" ]; then
+            echo "::warning::Secrets of the environment 'catena' missing: start the round by hand."
+            exit 0
+          fi
+          jq -n --arg t "risposta umana sulla PR #$PR" '{text: $t}' > payload.json
+          curl -fsS -X POST "$ROUTINE_FIRE_URL" \
+            -H "Authorization: Bearer $ROUTINE_FIRE_TOKEN" \
+            -H "anthropic-beta: experimental-cc-routine-2026-04-01" \
+            -H "anthropic-version: 2023-06-01" \
+            -H "Content-Type: application/json" \
+            --data @payload.json -o fire.json
+          echo "Round started: $(jq -r '.claude_code_session_url // "ok"' fire.json)"

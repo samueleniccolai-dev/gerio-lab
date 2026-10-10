@@ -1,0 +1,223 @@
+{
+  "versione": 1,
+  "obiettivo": "Demo in produzione con ordine end-to-end in Stripe test: lo stesso piano di Gerio al 4/10/2026.",
+  "nota": "Gli agenti cambiano solo i campi stato, giri, pr e passato_il. Tutto il resto si cambia con una PR umana (controllo in consegna).",
+  "t0_gerio": "2026-10-04T14:06:28Z",
+  "fuori_perimetro": [
+    "back-office del negozio (piano B: email e dashboard Stripe)",
+    "tipo di consegna CEMETERY",
+    "capacità per fascia oraria (solo orario limite)",
+    "impianto consensi e GDPR oltre la pagina privacy (dati finti)",
+    "SPF e DKIM completi"
+  ],
+  "traguardi": [
+    {
+      "id": "T1",
+      "titolo": "Binari, parte 1: deploy automatico",
+      "fatto_quando": "Un merge su main fa partire il workflow consegna: build dell'immagine, pubblicazione su GHCR, il server la scarica e riavvia (Docker Compose + Caddy con TLS), https://<LAB_BASE_DOMAIN> risponde 200 con la landing, smoke test post-deploy verde nel workflow consegna. Il deploy vive in infra/deploy.sh secondo il contratto di infra/README.md.",
+      "spec": [
+        "§11",
+        "App. B"
+      ],
+      "gerio": {
+        "cicli": [
+          1
+        ],
+        "pr": [
+          9
+        ],
+        "completato": "2026-10-04T20:45:33Z"
+      },
+      "stato": "da-fare",
+      "giri": [],
+      "pr": [],
+      "passato_il": null
+    },
+    {
+      "id": "T2",
+      "titolo": "Binari, parte 2: verifica visiva",
+      "fatto_quando": "E2E con browser reale e screenshot pubblicati come artefatto e2e-screenshots su ogni PR (ci.yml carica target/e2e-screenshots/). Comporta una dipendenza nuova (Playwright o un'estensione Quarkiverse equivalente): porta a senso unico, richiesta formale con alternativa.",
+      "spec": [
+        "§14"
+      ],
+      "gerio": {
+        "cicli": [
+          2
+        ],
+        "pr": [
+          13
+        ],
+        "completato": "2026-10-05T09:30:59Z"
+      },
+      "stato": "da-fare",
+      "giri": [],
+      "pr": [],
+      "passato_il": null
+    },
+    {
+      "id": "T3",
+      "titolo": "Catalogo + pagina prodotto, con dati finti da fioraia",
+      "fatto_quando": "Il negozio demo mostra catalogo e pagina prodotto con dati inventati da fioraia (SPEC §2.2).",
+      "spec": [
+        "§2.2",
+        "§6"
+      ],
+      "gerio": {
+        "cicli": [
+          3
+        ],
+        "pr": [
+          14
+        ],
+        "completato": "2026-10-05T14:46:55Z"
+      },
+      "stato": "da-fare",
+      "giri": [],
+      "pr": [],
+      "passato_il": null
+    },
+    {
+      "id": "T4",
+      "titolo": "Carrello",
+      "fatto_quando": "Il cliente aggiunge, cambia e toglie prodotti dal carrello del negozio demo.",
+      "spec": [
+        "§2.2",
+        "§6"
+      ],
+      "gerio": {
+        "cicli": [
+          4
+        ],
+        "pr": [
+          15
+        ],
+        "completato": "2026-10-05T22:22:59Z"
+      },
+      "stato": "da-fare",
+      "giri": [],
+      "pr": [],
+      "passato_il": null
+    },
+    {
+      "id": "T5",
+      "titolo": "Checkout con Stripe Checkout in test + webhook idempotente",
+      "fatto_quando": "Dal carrello si paga con Stripe Checkout in modalità test e il webhook firmato e idempotente segna l'ordine come pagato (SPEC §7.5, §8).",
+      "spec": [
+        "§7.5",
+        "§8"
+      ],
+      "gerio": {
+        "cicli": [
+          6,
+          7
+        ],
+        "pr": [
+          17,
+          19
+        ],
+        "completato": "2026-10-07T15:20:24Z"
+      },
+      "stato": "da-fare",
+      "giri": [],
+      "pr": [],
+      "passato_il": null
+    },
+    {
+      "id": "T6",
+      "titolo": "Email di conferma + pagina stato ordine",
+      "fatto_quando": "Dopo il pagamento parte l'email di conferma e il cliente vede lo stato dell'ordine da una pagina sua.",
+      "spec": [
+        "§2.2",
+        "§7.2",
+        "§9.2"
+      ],
+      "gerio": {
+        "cicli": [
+          8,
+          9
+        ],
+        "pr": [
+          20,
+          23
+        ],
+        "completato": "2026-10-08T20:24:10Z"
+      },
+      "stato": "da-fare",
+      "giri": [],
+      "pr": [],
+      "passato_il": null
+    },
+    {
+      "id": "T7",
+      "titolo": "Zone di consegna e orario limite, versione semplice",
+      "fatto_quando": "Il negozio consegna solo nelle sue zone, col loro costo, e rispetta l'orario limite; niente capacità per fascia.",
+      "spec": [
+        "§2.3",
+        "§7.3"
+      ],
+      "gerio": {
+        "cicli": [
+          10
+        ],
+        "pr": [
+          24
+        ],
+        "completato": "2026-10-09T08:39:10Z"
+      },
+      "stato": "da-fare",
+      "giri": [],
+      "pr": [],
+      "passato_il": null
+    },
+    {
+      "id": "T8",
+      "titolo": "Pagine legali minime + rifiniture demo",
+      "fatto_quando": "Il negozio demo ha le pagine legali minime e il piè di pagina completo (SPEC §12.3), con dati inventati.",
+      "spec": [
+        "§12.3",
+        "§2.2"
+      ],
+      "gerio": {
+        "cicli": [],
+        "pr": [],
+        "completato": null
+      },
+      "stato": "da-fare",
+      "giri": [],
+      "pr": [],
+      "passato_il": null
+    }
+  ],
+  "gerio_fuori_piano": [
+    {
+      "ciclo": 5,
+      "pr": 16,
+      "tema": "Tailwind standalone e htmx",
+      "tipo": "stack"
+    },
+    {
+      "ciclo": 11,
+      "pr": 25,
+      "tema": "import CSV di province, comuni e CAP",
+      "tipo": "deriva"
+    },
+    {
+      "ciclo": 12,
+      "pr": 27,
+      "tema": "import a blocchi con pagina d'esito",
+      "tipo": "deriva"
+    },
+    {
+      "ciclo": 13,
+      "pr": 30,
+      "tema": "zone per comune e provincia",
+      "tipo": "deriva"
+    },
+    {
+      "ciclo": 14,
+      "pr": 31,
+      "tema": "import più comodo",
+      "tipo": "deriva"
+    }
+  ]
+}

@@ -1,0 +1,24 @@
+# Weekly update PRs. Nothing merges by itself: every PR runs CI and is reviewed
+# by hand, like any other change.
+version: 2
+updates:
+  # Keeps the SHA-pinned actions in .github/workflows current (SHA and the
+  # "# vX.Y.Z" comment both get updated).
+  - package-ecosystem: github-actions
+    directory: /
+    schedule:
+      interval: weekly
+    commit-message:
+      prefix: ci
+
+  - package-ecosystem: maven
+    directory: /
+    schedule:
+      interval: weekly
+    commit-message:
+      prefix: build
+    ignore:
+      # Stay on the 3.33 LTS stream (PROGETTO.md §4.2): only patch releases.
+      # Moving to the next LTS is a planned upgrade (R4), not a weekly PR.
+      - dependency-name: "io.quarkus.platform:*"
+        update-types: ["version-update:semver-major", "version-update:semver-minor"]

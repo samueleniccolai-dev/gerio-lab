@@ -1,0 +1,144 @@
+{
+  "$schema": "https://json.schemastore.org/claude-code-settings.json",
+  "permissions": {
+    "defaultMode": "default",
+    "deny": [
+      "Read(.env)",
+      "Read(.env.*)",
+      "Read(*.env)",
+      "Read(secrets/**)",
+      "Read(*.pem)",
+      "Read(*.key)",
+      "Read(*.p12)",
+      "Read(*.jks)",
+      "Read(~/.ssh/**)",
+      "Read(~/.aws/**)",
+      "Read(~/.config/gh/**)",
+      "Read(~/.docker/config.json)",
+      "Edit(/.github/**)",
+      "Edit(/.claude/**)",
+      "Edit(/scripts/guard/**)",
+      "Edit(/docs/METODO.md)",
+      "Edit(/docs/ESPERIMENTO.md)",
+      "Edit(/metrics/baseline-gerio.csv)",
+      "Edit(/CLAUDE.md)",
+      "Edit(/docs/lab/SETUP.md)",
+      "Edit(/docs/lab/giri/_modello-piano.md)",
+      "Edit(/docs/lab/giri/_modello-rapporto.md)",
+      "Edit(/.git/**)",
+      "Write(/.github/**)",
+      "Write(/.claude/**)",
+      "Write(/scripts/guard/**)",
+      "Write(/docs/METODO.md)",
+      "Write(/docs/ESPERIMENTO.md)",
+      "Write(/metrics/baseline-gerio.csv)",
+      "Write(/CLAUDE.md)",
+      "Write(/docs/lab/SETUP.md)",
+      "Write(/docs/lab/giri/_modello-piano.md)",
+      "Write(/docs/lab/giri/_modello-rapporto.md)",
+      "Write(/.git/**)",
+      "Bash(sudo *)",
+      "Bash(printenv *)",
+      "Bash(env)",
+      "Bash(ssh *)",
+      "Bash(scp *)",
+      "Bash(rsync *)",
+      "Bash(gh pr merge *)",
+      "Bash(gh secret *)",
+      "Bash(gh variable *)",
+      "Bash(gh ruleset *)",
+      "Bash(gh auth *)",
+      "Bash(git push origin main*)",
+      "Bash(git push -u origin main*)",
+      "Bash(git push --force*)",
+      "Bash(git push -f*)",
+      "Bash(gh label delete *)"
+    ],
+    "allow": [
+      "Bash(./mvnw *)",
+      "Bash(git *)",
+      "Bash(gh pr *)",
+      "Bash(gh run *)",
+      "Bash(gh api *)",
+      "Bash(python3 scripts/*)",
+      "Bash(python3 -m unittest *)",
+      "Bash(python3 -I -m unittest *)",
+      "Bash(python3 -I scripts/*)",
+      "Bash(docker *)",
+      "Bash(ls *)",
+      "Bash(cat *)",
+      "Bash(grep *)",
+      "Bash(find *)",
+      "Bash(date *)",
+      "Bash(wc *)",
+      "Bash(head *)",
+      "Bash(tail *)",
+      "Bash(mkdir *)",
+      "Bash(cd *)",
+      "Bash(curl *)",
+      "WebSearch",
+      "WebFetch"
+    ]
+  },
+  "disableAllHooks": false,
+  "hooks": {
+    "SessionStart": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "\"$CLAUDE_PROJECT_DIR\"/.claude/hooks/session-start.sh",
+            "timeout": 900
+          }
+        ]
+      }
+    ],
+    "PreToolUse": [
+      {
+        "matcher": "Bash",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "python3 -I \"$CLAUDE_PROJECT_DIR\"/.claude/hooks/guard.py bash",
+            "timeout": 30,
+            "onFailure": "block"
+          }
+        ]
+      },
+      {
+        "matcher": "Edit|Write|MultiEdit|NotebookEdit",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "python3 -I \"$CLAUDE_PROJECT_DIR\"/.claude/hooks/guard.py files",
+            "timeout": 30,
+            "onFailure": "block"
+          }
+        ]
+      }
+    ],
+    "Stop": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "\"$CLAUDE_PROJECT_DIR\"/.claude/hooks/format.sh",
+            "timeout": 120
+          }
+        ]
+      }
+    ],
+    "PostToolUse": [
+      {
+        "matcher": "Bash",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "python3 -I \"$CLAUDE_PROJECT_DIR\"/.claude/hooks/guard.py after",
+            "timeout": 30
+          }
+        ]
+      }
+    ]
+  }
+}

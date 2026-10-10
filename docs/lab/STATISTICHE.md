@@ -1,0 +1,46 @@
+# Statistiche — laboratorio (metodo v3) contro Gerio (metodo v2)
+
+> Generato da `scripts/metrics/statistiche.py` il 2026-10-10 20:37 UTC. Dati: `metrics/giri.csv`, `metrics/baseline-gerio.csv`. Definizioni e cautele: `docs/ESPERIMENTO.md`.
+>
+> T0 di Gerio: 2026-10-04 14:06 UTC · T0 del laboratorio: non ancora (nessun giro) · traguardi passati dal laboratorio: 0 su 8.
+
+## Traguardo per traguardo
+
+Gerio ↔ laboratorio. Ore dal T0 al merge che chiude il traguardo; «decisioni all'umano» = in Gerio ogni
+decisione registrata più le domande bloccanti, nel laboratorio ratifiche più porte a senso unico.
+
+| Traguardo | Ore dal T0 | Cicli ↔ giri | Minuti umani | Decisioni all'umano | Rilavorazioni | Minuti di CI | Righe in src/main |
+|---|---|---|---|---|---|---|---|
+| T1 Binari, parte 1: deploy automatico | 6,7 ↔ — | 1 ↔ 0 | 30 ↔ — | 6 ↔ — | 3 ↔ — | 6,9 ↔ — | 0 ↔ — |
+| T2 Binari, parte 2: verifica visiva | 19,4 ↔ — | 1 ↔ 0 | 25 ↔ — | 4 ↔ — | 0 ↔ — | 8,6 ↔ — | 0 ↔ — |
+| T3 Catalogo + pagina prodotto, con dati finti da fioraia | 24,7 ↔ — | 1 ↔ 0 | 30 ↔ — | 8 ↔ — | 1 ↔ — | 12,7 ↔ — | 971 ↔ — |
+| T4 Carrello | 32,3 ↔ — | 1 ↔ 0 | 35 ↔ — | 11 ↔ — | 0 ↔ — | 14,8 ↔ — | 672 ↔ — |
+| T5 Checkout con Stripe Checkout in test + webhook idempotente | 73,2 ↔ — | 2 ↔ 0 | 25 ↔ — | 25 ↔ — | 0 ↔ — | 12,9 ↔ — | 2.237 ↔ — |
+| T6 Email di conferma + pagina stato ordine | 102,3 ↔ — | 2 ↔ 0 | 40 ↔ — | 19 ↔ — | 1 ↔ — | 31,1 ↔ — | 1.201 ↔ — |
+| T7 Zone di consegna e orario limite, versione semplice | 114,5 ↔ — | 1 ↔ 0 | 20 ↔ — | 16 ↔ — | 1 ↔ — | 24,6 ↔ — | 1.100 ↔ — |
+| T8 Pagine legali minime + rifiniture demo | — ↔ — | 0 ↔ 0 | — ↔ — | — ↔ — | — ↔ — | — ↔ — | — ↔ — |
+
+Gerio fuori dal piano del 4/10: 5 cicli (5, 11, 12, 13, 14), 4.077 righe in src/main, 110 minuti umani stimati, 55 decisioni.
+
+Gerio, cicli senza stima dei minuti umani nel rapporto: 6. I minuti umani dei loro traguardi sono un minimo.
+
+## Ipotesi (solo sui traguardi già passati dal laboratorio)
+
+| # | Ipotesi | Laboratorio | Gerio | Esito |
+|---|---|---|---|---|
+| H1 | minuti umani ≤ 50% di Gerio | — | — | dati insufficienti |
+| H2 | ≤ 5 decisioni all'umano per traguardo | — | — | dati insufficienti |
+| H3 | difetti dopo il merge ≤ Gerio | 0 giri di correzione (`difetto_di`) | non misurato in Gerio | da valutare alla fine |
+| H4 | deriva < 10% delle righe di produzione | —% | 31,1% | dati insufficienti |
+| H5 | ore fino a T7 ≤ Gerio (secondaria) | — | 114,5 | dati insufficienti |
+
+## Giri del laboratorio
+
+Nessun giro ancora.
+
+
+## Cautele
+
+- I minuti umani di Gerio sono stime del costruttore nei rapporti; quelli del laboratorio sono dichiarati (`⏱`).
+- Il laboratorio parte sapendo come è andata Gerio: le risposte marcate `da Gerio: sì` vanno lette con sconto.
+- Le ore di calendario dipendono dalla vita più che dal metodo.

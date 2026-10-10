@@ -1,0 +1,35 @@
+# Build
+target/
+*.class
+*.log
+
+# Quarkus
+.quarkus/
+
+# Secrets: never in the repository
+.env
+.env.*
+*.env
+!.env.example
+secrets/
+*.pem
+*.key
+*.p12
+*.jks
+
+# IDE (keep shared code style only)
+.idea/*
+!.idea/codeStyles/
+*.iml
+.vscode/
+
+# Claude Code: personal files
+.claude/settings.local.json
+CLAUDE.local.md
+
+# OS
+.DS_Store
+
+# Python
+__pycache__/
+*.pyc

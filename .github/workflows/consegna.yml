@@ -1,0 +1,395 @@
+# Delivery chain of the lab (docs/METODO.md §2 and §4). Protected path: for workflow_run and push
+# GitHub runs the version of this file on main, so a round cannot loosen these rules in its PR.
+#
+#   decidi    after a ci run on a round's PR (branch claude/giro-…, author LAB_AUTORE):
+#             green -> scripts/guard/pr_guard.py -> merge, or label revisione-umana with reasons;
+#             red   -> label riparazione-1, then riparazione-2 (each starts a repair round), then
+#                      bloccato. PRs that wait for a person (domanda, revisione-umana, bloccato)
+#                      are left alone.
+#   controllo after a push to main, which this workflow never makes (its merges use GITHUB_TOKEN):
+#             a round's PR merged without passing here is labelled fuori-catena.
+#   immagine  after a merge: builds the image of main and pushes it to GHCR. No secrets in this
+#             job: it is the only one that runs the round's code. Skipped for docs-only merges.
+#   deploy    environment "produzione" (its secrets exist only for main): infra/deploy.sh with
+#             the image, infra/smoke.sh, infra/rollback.sh when something is red. It runs only the
+#             scripts in infra/, which always go through human review.
+#   avanti    environment "catena" (main only): starts the next round through the Routine's API
+#             trigger, unless the lab is off (LAB_ATTIVO != true, or docs/lab/STOP) or
+#             LAB_GIRI_MAX_GIORNO rounds were merged in the last 24 hours (the nightly run resumes).
+#
+# Nothing from a PR is executed before its merge: its commits are only read, as data. The merge
+# uses GITHUB_TOKEN, which does not trigger other workflows: that is why merge, image, deploy and
+# the next round live in this one workflow. The answer to a question PR: risposta.yml.
+name: consegna
+
+on:
+  workflow_run:
+    workflows: [ci]
+    types: [completed]
+  push:
+    branches: [main]
+  workflow_dispatch:
+    inputs:
+      deploy:
+        description: "Costruisci e pubblica main prima di avviare il giro"
+        type: boolean
+        default: false
+
+permissions:
+  contents: read
+
+env:
+  GH_REPO: ${{ github.repository }}
+  AUTORE: ${{ vars.LAB_AUTORE || 'SamueleNiccolai' }}
+
+jobs:
+  decidi:
+    if: >-
+      github.event_name == 'workflow_run' &&
+      github.event.workflow_run.event == 'pull_request' &&
+      github.event.workflow_run.head_repository.full_name == github.repository &&
+      startsWith(github.event.workflow_run.head_branch, 'claude/giro-') &&
+      github.event.workflow_run.conclusion != 'cancelled' &&
+      github.event.workflow_run.conclusion != 'skipped'
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    concurrency:
+      group: consegna-decidi-${{ github.event.workflow_run.head_branch }}
+      cancel-in-progress: false
+    permissions:
+      contents: write
+      pull-requests: write
+      issues: write
+    outputs:
+      merged: ${{ steps.merge.outputs.merged }}
+      sha: ${{ steps.merge.outputs.sha }}
+      pr: ${{ steps.pr.outputs.number }}
+      repair: ${{ steps.repair.outputs.fire }}
+    env:
+      GH_TOKEN: ${{ github.token }}
+      HEAD_SHA: ${{ github.event.workflow_run.head_sha }}
+      HEAD_BRANCH: ${{ github.event.workflow_run.head_branch }}
+      CONCLUSION: ${{ github.event.workflow_run.conclusion }}
+    steps:
+      # Credentials kept only to fetch the PR's commits as data: nothing from the PR runs here.
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: main
+          fetch-depth: 0
+
+      - name: Find the round's PR at this commit
+        id: pr
+        run: |
+          gh pr list --state open --head "$HEAD_BRANCH" \
+            --json number,headRefName,headRefOid,isDraft,labels,body,author > prs.json
+          n=$(jq -r --arg sha "$HEAD_SHA" --arg a "$AUTORE" \
+            '[.[] | select(.headRefOid == $sha and .author.login == $a)][0].number // empty' prs.json)
+          if [ -z "$n" ]; then
+            echo "No open PR by $AUTORE at $HEAD_SHA (newer commit, closed, or another author): nothing to do."
+            exit 0
+          fi
+          jq --argjson n "$n" '.[] | select(.number == $n)' prs.json > pr.json
+          echo "number=$n" >> "$GITHUB_OUTPUT"
+          echo "draft=$(jq -r .isDraft pr.json)" >> "$GITHUB_OUTPUT"
+
+      - name: Red CI -> repair round (at most two)
+        id: repair
+        if: steps.pr.outputs.number != '' && steps.pr.outputs.draft == 'false' && env.CONCLUSION != 'success'
+        env:
+          N: ${{ steps.pr.outputs.number }}
+        run: |
+          labels=",$(jq -r '[.labels[].name] | join(",")' pr.json),"
+          case "$labels" in
+            *,bloccato,*|*,revisione-umana,*|*,domanda,*)
+              echo "PR #$N waits for a person: no repair round."
+              echo "fire=false" >> "$GITHUB_OUTPUT" ;;
+            *,riparazione-2,*)
+              gh pr edit "$N" --add-label bloccato
+              gh pr comment "$N" --body "⛔ CI ancora rossa dopo due riparazioni: serve una persona (docs/METODO.md §5)."
+              echo "fire=false" >> "$GITHUB_OUTPUT" ;;
+            *,riparazione-1,*)
+              gh pr edit "$N" --add-label riparazione-2
+              echo "fire=true" >> "$GITHUB_OUTPUT" ;;
+            *)
+              gh pr edit "$N" --add-label riparazione-1
+              echo "fire=true" >> "$GITHUB_OUTPUT" ;;
+          esac
+
+      - name: Green CI -> checks before the merge
+        id: guard
+        if: steps.pr.outputs.number != '' && steps.pr.outputs.draft == 'false' && env.CONCLUSION == 'success'
+        env:
+          N: ${{ steps.pr.outputs.number }}
+          RUN_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
+        run: |
+          git fetch --no-tags origin "+refs/pull/$N/head:refs/remotes/pr/head"
+          if [ "$(git rev-parse refs/remotes/pr/head)" != "$HEAD_SHA" ]; then
+            echo "::notice::PR #$N moved past $HEAD_SHA: a newer ci run will decide."
+            echo "auto=skip" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+          # GitHub counts a skipped job (CI skips drafts) as a passed check: here only a build that
+          # really ran green on this very commit counts, and none may still be running.
+          gh api "repos/$GH_REPO/commits/$HEAD_SHA/check-runs?check_name=build&per_page=100" > build.json
+          verdi=$(jq '[.check_runs[] | select(.conclusion == "success")] | length' build.json)
+          aperti=$(jq '[.check_runs[] | select(.status != "completed")] | length' build.json)
+          if [ "$verdi" -eq 0 ] || [ "$aperti" -gt 0 ]; then
+            echo "::notice::No completed green build on $HEAD_SHA yet: the next ci run decides."
+            echo "auto=skip" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+          if python3 -I scripts/guard/pr_guard.py --base origin/main --head "$HEAD_SHA" \
+              --pr-json pr.json --out verdetto.json --markdown verdetto.md; then
+            echo "auto=$(jq -r .auto_merge verdetto.json)" >> "$GITHUB_OUTPUT"
+          else
+            # A check that cannot run never means "merge": a person looks.
+            printf '⏸️ **Revisione umana**: i controlli di consegna non sono riusciti a girare ([run](%s)).\n' "$RUN_URL" > verdetto.md
+            echo "auto=false" >> "$GITHUB_OUTPUT"
+          fi
+          cat verdetto.md >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Human review needed
+        if: steps.guard.outputs.auto == 'false'
+        env:
+          N: ${{ steps.pr.outputs.number }}
+        run: |
+          gh pr edit "$N" --add-label revisione-umana
+          gh pr comment "$N" --body-file verdetto.md
+
+      - name: Lab switched off
+        if: steps.guard.outputs.auto == 'true' && vars.LAB_ATTIVO != 'true'
+        env:
+          N: ${{ steps.pr.outputs.number }}
+        run: |
+          gh pr edit "$N" --add-label revisione-umana
+          gh pr comment "$N" --body "⏸️ Controlli superati, ma l'interruttore è spento (\`LAB_ATTIVO\`): niente merge automatico. Se va bene, mergiala tu."
+
+      - name: Merge
+        id: merge
+        if: steps.guard.outputs.auto == 'true' && vars.LAB_ATTIVO == 'true'
+        env:
+          N: ${{ steps.pr.outputs.number }}
+        run: |
+          if ! gh pr merge "$N" --merge --match-head-commit "$HEAD_SHA" --delete-branch; then
+            gh pr edit "$N" --add-label revisione-umana
+            gh pr comment "$N" --body "⏸️ Merge automatico non riuscito (conflitto con main o regole del branch): serve una persona."
+            exit 0
+          fi
+          # Outputs first: whatever fails after this line, the merge happened.
+          echo "merged=true" >> "$GITHUB_OUTPUT"
+          sha=$(gh pr view "$N" --json mergeCommit --jq '.mergeCommit.oid' || true)
+          [ -n "$sha" ] || sha=$(git ls-remote origin refs/heads/main | cut -f1)
+          echo "sha=$sha" >> "$GITHUB_OUTPUT"
+          gh pr comment "$N" --body-file verdetto.md || echo "::warning::Could not comment on PR #$N."
+
+  controllo:
+    if: github.event_name == 'push'
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    permissions:
+      contents: read
+      pull-requests: write
+      issues: write
+    env:
+      GH_TOKEN: ${{ github.token }}
+      SHA: ${{ github.sha }}
+    steps:
+      # Legitimate human merges: PRs that this workflow sent to a person (revisione-umana or
+      # bloccato added by github-actions[bot]). Anything else is reported.
+      - name: A round's PR merged outside the chain?
+        run: |
+          gh api "repos/$GH_REPO/commits/$SHA/pulls" > prs.json
+          jq -r '.[] | select(.merged_at != null) | select(.head.ref | startswith("claude/giro-")) | .number' prs.json > candidati.txt
+          : > fuori.txt
+          while read -r n; do
+            [ -n "$n" ] || continue
+            dal_bot=$(gh api --paginate "repos/$GH_REPO/issues/$n/events" \
+              --jq '[.[] | select(.event == "labeled" and (.label.name == "revisione-umana" or .label.name == "bloccato") and .actor.login == "github-actions[bot]")] | length' \
+              | awk '{s += $1} END {print s + 0}')
+            [ "$dal_bot" -gt 0 ] || echo "$n" >> fuori.txt
+          done < candidati.txt
+          while read -r n; do
+            [ -n "$n" ] || continue
+            gh pr edit "$n" --add-label fuori-catena
+            gh pr comment "$n" --body "⚠️ **Merge fuori catena**: questa PR di un giro è entrata in main senza i controlli di consegna e senza l'etichetta \`revisione-umana\` o \`bloccato\`. Se l'hai mergiata tu, va bene: togli \`fuori-catena\` e metti \`revisione-umana\`. Se no, un giro ha mergiato da sé: va guardato (README, «Cosa è garantito e cosa no»)."
+            echo "::warning::PR #$n reached main outside the delivery chain."
+          done < fuori.txt
+
+  immagine:
+    needs: decidi
+    if: >-
+      !cancelled() && (
+        needs.decidi.outputs.merged == 'true' ||
+        github.event_name == 'push' ||
+        (github.event_name == 'workflow_dispatch' && inputs.deploy)
+      )
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    concurrency:
+      group: consegna-immagine
+      cancel-in-progress: false
+    permissions:
+      contents: read
+      packages: write
+    outputs:
+      sha: ${{ steps.build.outputs.sha }}
+      image: ${{ steps.push.outputs.image }}
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: ${{ needs.decidi.outputs.sha || github.sha }}
+          persist-credentials: false
+
+      - uses: actions/setup-java@de7274f081f381c8f8158605e0321c36c376e2e6 # v6.0.1
+        with:
+          distribution: temurin
+          java-version: '25'
+          cache: maven
+
+      # The round's code runs here, and only here: no secrets, no token in the environment.
+      - name: Build the image
+        id: build
+        run: |
+          sha=$(git rev-parse HEAD)
+          echo "sha=$sha" >> "$GITHUB_OUTPUT"
+          if [ ! -f src/main/docker/Dockerfile.jvm ]; then
+            echo "::notice::No src/main/docker/Dockerfile.jvm: nothing to build."
+            exit 0
+          fi
+          ./mvnw -B -ntp package -DskipTests
+          docker build -f src/main/docker/Dockerfile.jvm -t "ghcr.io/${GITHUB_REPOSITORY,,}:$sha" .
+          echo "built=true" >> "$GITHUB_OUTPUT"
+
+      - name: Push the image to GHCR
+        id: push
+        if: steps.build.outputs.built == 'true'
+        env:
+          GHCR_TOKEN: ${{ github.token }}
+          GHCR_USER: ${{ github.actor }}
+          SHA: ${{ steps.build.outputs.sha }}
+        run: |
+          image="ghcr.io/${GITHUB_REPOSITORY,,}:$SHA"
+          echo "$GHCR_TOKEN" | docker login ghcr.io -u "$GHCR_USER" --password-stdin
+          docker push "$image"
+          echo "image=$(docker inspect --format '{{index .RepoDigests 0}}' "$image")" >> "$GITHUB_OUTPUT"
+
+  deploy:
+    needs: immagine
+    if: ${{ !cancelled() && needs.immagine.result == 'success' && needs.immagine.outputs.image != '' }}
+    runs-on: ubuntu-latest
+    environment: produzione
+    timeout-minutes: 40
+    concurrency:
+      group: consegna-deploy
+      cancel-in-progress: false
+    permissions:
+      contents: read
+      packages: read
+    outputs:
+      esito: ${{ steps.deploy.outputs.esito }}
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: ${{ needs.immagine.outputs.sha }}
+          persist-credentials: false
+
+      # Contract of infra/deploy.sh, infra/smoke.sh, infra/rollback.sh: infra/README.md.
+      - name: Deploy and smoke test
+        id: deploy
+        env:
+          DEPLOY_HOST: ${{ secrets.DEPLOY_HOST }}
+          DEPLOY_USER: ${{ secrets.DEPLOY_USER }}
+          DEPLOY_SSH_KEY: ${{ secrets.DEPLOY_SSH_KEY }}
+          DEPLOY_KNOWN_HOSTS: ${{ secrets.DEPLOY_KNOWN_HOSTS }}
+          LAB_BASE_DOMAIN: ${{ vars.LAB_BASE_DOMAIN }}
+          IMAGE: ${{ needs.immagine.outputs.image }}
+          GHCR_TOKEN: ${{ github.token }}
+          GHCR_USER: ${{ github.actor }}
+        run: |
+          if [ ! -x infra/deploy.sh ]; then
+            echo "esito=saltato" >> "$GITHUB_OUTPUT"
+            echo "::notice::No infra/deploy.sh yet (goal T1): nothing to deploy."
+            exit 0
+          fi
+          if [ -z "$DEPLOY_HOST" ] || [ -z "$DEPLOY_SSH_KEY" ] || [ -z "$DEPLOY_KNOWN_HOSTS" ] || [ -z "$LAB_BASE_DOMAIN" ]; then
+            echo "esito=saltato" >> "$GITHUB_OUTPUT"
+            echo "::warning::Secrets of the environment 'produzione' or LAB_BASE_DOMAIN missing (docs/lab/SETUP.md §5): no deploy."
+            exit 0
+          fi
+          if timeout 15m infra/deploy.sh "$IMAGE" && { [ ! -x infra/smoke.sh ] || timeout 5m infra/smoke.sh; }; then
+            echo "esito=ok" >> "$GITHUB_OUTPUT"
+          else
+            echo "esito=fallito" >> "$GITHUB_OUTPUT"
+            echo "::error::Deploy or smoke test failed for $IMAGE"
+            if [ -x infra/rollback.sh ]; then timeout 10m infra/rollback.sh || echo "::error::Rollback failed too."; fi
+            exit 1  # a red run: GitHub notifies the owner
+          fi
+
+  avanti:
+    needs: [decidi, immagine, deploy]
+    if: >-
+      !cancelled() && vars.LAB_ATTIVO == 'true' && (
+        needs.decidi.outputs.merged == 'true' ||
+        needs.decidi.outputs.repair == 'true' ||
+        github.event_name == 'push' ||
+        github.event_name == 'workflow_dispatch'
+      )
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    environment: catena
+    concurrency:
+      group: consegna-avanti
+      cancel-in-progress: false
+    permissions:
+      contents: read
+      pull-requests: read
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: main
+          persist-credentials: false
+
+      - name: Start the next round
+        env:
+          GH_TOKEN: ${{ github.token }}
+          ROUTINE_FIRE_URL: ${{ secrets.ROUTINE_FIRE_URL }}
+          ROUTINE_FIRE_TOKEN: ${{ secrets.ROUTINE_FIRE_TOKEN }}
+          MAX: ${{ vars.LAB_GIRI_MAX_GIORNO || '6' }}
+          EVENTO: ${{ github.event_name }}
+          PR: ${{ needs.decidi.outputs.pr }}
+          RIPARAZIONE: ${{ needs.decidi.outputs.repair }}
+          ESITO: ${{ needs.deploy.outputs.esito }}
+          RISULTATO_IMMAGINE: ${{ needs.immagine.result }}
+          RISULTATO_DEPLOY: ${{ needs.deploy.result }}
+          SHA: ${{ needs.immagine.outputs.sha || github.sha }}
+        run: |
+          if [ -f docs/lab/STOP ]; then echo "::notice::docs/lab/STOP exists: chain stopped."; exit 0; fi
+          if [ -z "$ROUTINE_FIRE_URL" ] || [ -z "$ROUTINE_FIRE_TOKEN" ]; then
+            echo "::warning::Secrets of the environment 'catena' missing (docs/lab/SETUP.md §3): start the next round by hand."
+            exit 0
+          fi
+          deploy="${ESITO:-saltato}"
+          for r in "$RISULTATO_IMMAGINE" "$RISULTATO_DEPLOY"; do
+            case "$r" in success|skipped|"") ;; *) deploy="fallito" ;; esac
+          done
+          if [ "$RIPARAZIONE" = "true" ]; then
+            motivo="riparazione: CI rossa sulla PR #$PR"
+          else
+            since=$(date -u -d '24 hours ago' +%FT%TZ)
+            fatti=$(gh pr list --state merged --label giro --limit 100 --json mergedAt \
+              --jq "[.[] | select(.mergedAt >= \"$since\")] | length")
+            if [ "$fatti" -ge "$MAX" ]; then
+              echo "::notice::$fatti rounds merged in the last 24 h (limit $MAX): the nightly run resumes."
+              exit 0
+            fi
+            motivo="evento $EVENTO; PR #${PR:-—}; deploy $deploy di $SHA"
+            if [ "$deploy" = "fallito" ]; then motivo="DEPLOY FALLITO di $SHA dopo la PR #${PR:-—}: prima di tutto, riparare"; fi
+          fi
+          jq -n --arg t "$motivo" '{text: $t}' > payload.json
+          curl -fsS -X POST "$ROUTINE_FIRE_URL" \
+            -H "Authorization: Bearer $ROUTINE_FIRE_TOKEN" \
+            -H "anthropic-beta: experimental-cc-routine-2026-04-01" \
+            -H "anthropic-version: 2023-06-01" \
+            -H "Content-Type: application/json" \
+            --data @payload.json -o fire.json
+          echo "Next round started: $(jq -r '.claude_code_session_url // "ok"' fire.json)"

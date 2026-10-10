@@ -1,0 +1,90 @@
+# Build and test every pull request (SPEC §11.5). Protected path: rounds never edit this file.
+# Instead they use three extension points, all optional:
+#   scripts/ci/prepare.sh       runs before the build (for example: install a browser)
+#   scripts/ci/check.sh         runs after the build (for example: committed assets up to date)
+#   target/e2e-screenshots/     uploaded as the "e2e-screenshots" artifact, the preview for a human
+# ready_for_review is listed because a round opens its PR as a draft (the lock) and marks it ready
+# at the end: that last event must produce a run for the consegna workflow to decide on.
+name: ci
+
+on:
+  pull_request:
+    types: [opened, synchronize, reopened, ready_for_review]
+  workflow_dispatch:
+
+# Least privilege: this workflow only reads the code. No secrets are used here.
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  build:
+    # A draft PR is a round still at work (its lock): its pushes, including the red acceptance
+    # tests, need no CI. Marking it ready (ready_for_review) runs the real check.
+    if: github.event_name != 'pull_request' || github.event.pull_request.draft == false
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      # Actions pinned to a full commit SHA (the tag in the comment is only for humans).
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      - uses: actions/setup-java@de7274f081f381c8f8158605e0321c36c376e2e6 # v6.0.1
+        with:
+          distribution: temurin
+          java-version: '25'
+          cache: maven
+
+      - name: Rules of the lab (guard tests)
+        run: python3 -m unittest discover -s scripts/guard/tests
+
+      - name: Prepare (scripts/ci/prepare.sh)
+        run: if [ -x scripts/ci/prepare.sh ]; then scripts/ci/prepare.sh; else echo "no prepare step"; fi
+
+      # verify = unit + @QuarkusTest tests (PostgreSQL 17 via Dev Services and Testcontainers,
+      # Docker is preinstalled on ubuntu-latest) + Spotless check.
+      - name: Build and test
+        run: ./mvnw -B -ntp verify 2>&1 | tee mvn.log; exit "${PIPESTATUS[0]}"
+
+      - name: Extra checks (scripts/ci/check.sh)
+        run: if [ -x scripts/ci/check.sh ]; then scripts/ci/check.sh; else echo "no extra checks"; fi
+
+      # The image must build BEFORE anything reaches main: consegna deploys right after the merge.
+      - name: Container image builds
+        run: docker build -f src/main/docker/Dockerfile.jvm .
+
+      - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        if: ${{ !cancelled() }}
+        with:
+          name: e2e-screenshots
+          path: target/e2e-screenshots/
+          if-no-files-found: ignore
+          retention-days: 14
+
+      # Test reports: the metrics of a round and the reviewer of a repair read them.
+      - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        if: ${{ !cancelled() }}
+        with:
+          name: test-reports
+          path: |
+            target/surefire-reports/TEST-*.xml
+            target/failsafe-reports/TEST-*.xml
+          if-no-files-found: ignore
+          retention-days: 14
+
+      # On failure, surface the Maven errors as annotations: readable from the PR and the API.
+      - if: failure()
+        name: Surface the errors
+        run: |
+          [ -f mvn.log ] && grep -h '\[ERROR\]' mvn.log | head -8 | while IFS= read -r l; do echo "::error::${l}"; done
+          for f in target/surefire-reports/*.txt target/failsafe-reports/*.txt; do
+            [ -f "$f" ] || continue
+            if grep -qE 'FAILURE!|ERROR!' "$f"; then
+              echo "::error::===== $f ====="
+              head -12 "$f" | while IFS= read -r l; do echo "::error::${l}"; done
+            fi
+          done

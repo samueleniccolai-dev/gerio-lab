@@ -59,7 +59,7 @@ I segreti del deploy stanno nell'**environment `produzione`** (Settings → Envi
 ```bash
 ssh -i ~/.ssh/lab_deploy deploy@IPV4 docker ps   # risponde con la tabella vuota di Docker
 ```
-**Ultima prova:** —
+**Ultima prova:** 2026-10-11, prova indiretta (il deploy del run 38151028698 è riuscito, quindi il setup del server funziona).
 
 ## 1. Deploy e rollback
 
@@ -91,7 +91,7 @@ curl -s -o /dev/null -w '%{http_code}\n' https://gerio-lab.samueleniccolai.com/q
   non aprirebbe il database. Ripristina a mano `/opt/gerio-lab/.env` (chmod 600) dal gestore di password.
 - **Codici d'uscita degli script:** 0 ok, 1 passo fallito, 2 argomento non valido, 3 configurazione mancante.
 
-**Ultima prova:** —
+**Ultima prova:** 2026-10-11, run `consegna` 38151028698 (merge della PR #2, SHA `de8495e`): esito ok; smoke riuscito al tentativo 5 (4 tentativi a vuoto, ~20 s di 503).
 
 ## 2. Ripristino di database e foto
 *(da scrivere)* — Ultima prova: —

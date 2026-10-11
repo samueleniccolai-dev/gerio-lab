@@ -22,3 +22,4 @@ Stato: `—` (in vigore) · `contestata` · `cambiata (giro NNN)` · `risposta d
 | 11 | 11/10 | 005 | registro | Entità e `CatalogService` nel package `catalog`, `CatalogResource` in `storefront`, seme in `demo` | tutto in `storefront` | separa dati e vetrina (§4.3) | — |
 | 12 | 11/10 | 005 | registro | Visibilità (prodotto attivo, categoria visibile, ≥1 variante attiva) nel servizio; altrimenti 404 | logica nella risorsa | niente logica nelle risorse | — |
 | 13 | 11/10 | 005 | registro | `Prices.format` scritto a mano con U+00A0 | `NumberFormat` | l'uscita non dipende dai dati locale del JDK | — |
+| 14 | 11/10 | 006 | registro | Il Caddyfile serve due nomi espliciti (`base, demo.base`) in un solo blocco, senza on-demand TLS | on-demand TLS di App. B.3; snippet | un solo negozio pubblico; si toglie con un commit | — |

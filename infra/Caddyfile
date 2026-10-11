@@ -1,0 +1,17 @@
+{$LAB_BASE_DOMAIN} {
+	encode zstd gzip
+	header {
+		Strict-Transport-Security "max-age=31536000; includeSubDomains"
+		X-Content-Type-Options "nosniff"
+		Referrer-Policy "strict-origin-when-cross-origin"
+		X-Frame-Options "DENY"
+		Permissions-Policy "camera=(), microphone=(), geolocation=()"
+		-Server
+	}
+	# management paths: never reachable from outside
+	@internal path /internal/* /q/*
+	respond @internal 404
+	reverse_proxy app:8080 {
+		health_uri /q/health/ready
+	}
+}

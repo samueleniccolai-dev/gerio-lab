@@ -62,8 +62,36 @@ ssh -i ~/.ssh/lab_deploy deploy@IPV4 docker ps   # risponde con la tabella vuota
 **Ultima prova:** —
 
 ## 1. Deploy e rollback
-*(da scrivere con il traguardo T1: `infra/deploy.sh`, `infra/smoke.sh`, `infra/rollback.sh`,
-contratto in `infra/README.md`)*
+
+**Quando:** il deploy parte da solo dopo ogni merge su `main` (workflow `consegna`, job `deploy`).
+A mano: `consegna` con `workflow_dispatch` e `deploy=true`. Il rollback parte da solo se deploy o
+smoke falliscono. Contratto degli script: `infra/README.md`.
+
+**Passi (li fa `consegna`, mai a mano dai giri):**
+1. `infra/deploy.sh <immagine@sha256:…>` copia compose, Caddyfile e `remote.sh` in
+   `/opt/gerio-lab/incoming/` e lancia `remote.sh deploy` sul server. Il token GHCR passa solo su stdin.
+2. Sul server, sotto `flock` (`/opt/gerio-lab/.deploy.lock`): salva lo stato in uso in `previous/`,
+   aggiorna `.env`, `docker compose pull app`, `up -d --wait`, `caddy validate` + `caddy reload`,
+   verifica il digest in esecuzione.
+3. `infra/smoke.sh` prova `https://$LAB_BASE_DOMAIN` (24 tentativi da 5 s).
+4. Se qualcosa è rosso: `infra/rollback.sh` rimette compose, Caddyfile e immagine da `previous/`.
+
+**Come verifico:**
+```bash
+curl -s -o /dev/null -w '%{http_code}\n' https://gerio-lab.samueleniccolai.com/        # 200
+curl -sI http://gerio-lab.samueleniccolai.com/ | head -1                                # 308
+curl -s -o /dev/null -w '%{http_code}\n' https://gerio-lab.samueleniccolai.com/q/health/ready  # 404
+```
+
+**Casi particolari:**
+- **Deploy ripetuto con lo stesso digest:** idempotente, `.env` non rigenerato, `up -d` non ricrea niente.
+- **503 per qualche secondo** mentre `app` viene ricreato: atteso; lo smoke riprova.
+- **Primo deploy fallito:** non c'è `previous/`, `rollback.sh` esce con errore e non ferma niente.
+- **`.env` mancante ma volume `gerio-lab_pgdata` esistente:** `remote.sh` si ferma. Una password nuova
+  non aprirebbe il database. Ripristina a mano `/opt/gerio-lab/.env` (chmod 600) dal gestore di password.
+- **Codici d'uscita degli script:** 0 ok, 1 passo fallito, 2 argomento non valido, 3 configurazione mancante.
+
+**Ultima prova:** —
 
 ## 2. Ripristino di database e foto
 *(da scrivere)* — Ultima prova: —

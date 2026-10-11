@@ -1,10 +1,10 @@
 ---
 giro: 006
 traguardo: T3
-fase: critica        # piano → critica → costruzione → revisione → chiusura
+fase: costruzione        # piano → critica → costruzione → revisione → chiusura
 inizio: 2026-10-11T18:43:38Z
 ricerca: no
-accettazione:
+accettazione: 56485d2d61e6e8af028fdce4a0cd15068044adc4
 ripreso: no
 ---
 # Piano del giro 006 — il negozio demo raggiungibile su `demo.<LAB_BASE_DOMAIN>`
@@ -14,10 +14,12 @@ T3, parte finale. Il giro 005 ha fatto catalogo e scheda prodotto (PR #8, su `ma
 produzione `https://demo.gerio-lab.samueleniccolai.com` non ha certificato (oggi: errore TLS,
 `tlsv1 alert internal error`), perché il `Caddyfile` serve solo il dominio base. Questa fetta:
 
-1. `infra/Caddyfile`: un secondo sito con nome esplicito `demo.{$LAB_BASE_DOMAIN}`, con le stesse
-   protezioni del dominio base, messe in comune in uno snippet `(common)` (come SPEC App. B.3).
-2. `infra/smoke.sh`: dopo i controlli di oggi sul dominio base, controlli dall'esterno sul negozio
-   demo (catalogo, scheda prodotto, HSTS, http→https, percorsi di gestione chiusi).
+1. `infra/Caddyfile`: lo stesso blocco serve due nomi espliciti,
+   `{$LAB_BASE_DOMAIN}, demo.{$LAB_BASE_DOMAIN} { … }`, con le protezioni di oggi (niente snippet:
+   un solo blocco basta e non duplica nulla).
+2. `infra/smoke.sh`: catalogo e scheda `rose-rosse` sul demo; i controlli comuni (HSTS con `-I`,
+   http→308, `/q/health/ready` e `/internal/tls/allowed` → 404) in un ciclo `for host` sui due
+   host, dentro lo stesso `check()` ritentato.
 
 Con il merge (in revisione umana: tocca `infra/`) e lo smoke verde nel workflow `consegna`,
 T3 passa. Non serve codice Java: l'app riconosce già `demo.<base>` come slug `demo`
@@ -38,32 +40,38 @@ Lo smoke cerca solo testi senza spazi speciali (niente prezzi con U+00A0, niente
 
 ## Fatto quando — controlli eseguibili
 - [ ] `./mvnw -q -Dtest='Giro006*AcceptanceTest' test` → verde. Copre le righe seguenti marcate (J).
-- [ ] (J) `caddy adapt` del `Caddyfile` (immagine `caddy:2.11.7`, già fissata nel compose, con
-      `LAB_BASE_DOMAIN=lab.example.invalid`) → uscita 0; nella configurazione JSON c'è una route
-      per l'host `demo.lab.example.invalid` e una per `lab.example.invalid`.
-- [ ] (J) Per **ciascuno** dei due host, la configurazione adattata ha: header
-      `Strict-Transport-Security`, risposta 404 per `/internal/*` e `/q/*`, `reverse_proxy` verso
-      `app:8080`. Nessun host oltre questi due (niente `*.`, niente `https://` catch-all).
+- [ ] (J) `docker run --rm -i -e LAB_BASE_DOMAIN=lab.example.invalid caddy:2.11.7 caddy adapt
+      --config /dev/stdin --adapter caddyfile < infra/Caddyfile` → uscita 0; ogni route di primo
+      livello ha un matcher `host`; l'insieme degli host è esattamente
+      {`lab.example.invalid`, `demo.lab.example.invalid`} (niente catch-all, niente `*.`).
+- [ ] (J) Per **ciascuno** dei due host esiste una route il cui matcher `host` lo contiene (anche
+      la stessa per entrambi) e nel cui sottoalbero ci sono: `Strict-Transport-Security`, una
+      route con `path` `/internal/*` → `static_response` 404, una con `/q/*` → 404,
+      `reverse_proxy` con upstream `app:8080`.
 - [ ] (J) `smoke.sh` con un `curl` finto nel `PATH` che risponde «tutto giusto»
       (`SMOKE_ATTEMPTS=1`, `SMOKE_DELAY=0`, `LAB_BASE_DOMAIN=lab.example.invalid`) → uscita 0, e
       il registro delle chiamate del `curl` finto contiene
       `https://demo.lab.example.invalid/catalogo` e
       `https://demo.lab.example.invalid/prodotti/rose-rosse`.
-- [ ] (J) Stesso `curl` finto, ma il catalogo del demo non contiene `Fioreria Il Glicine` → uscita 1.
-- [ ] (J) Stesso `curl` finto, ma la scheda `rose-rosse` del demo non contiene `Mazzo di rose rosse`
-      → uscita 1.
-- [ ] (J) Stesso `curl` finto, ma `https://demo.lab.example.invalid/q/health/ready` risponde 200
-      → uscita 1.
-- [ ] (J) Stesso `curl` finto, ma la risposta HEAD del demo non ha `Strict-Transport-Security`
-      → uscita 1.
-- [ ] (J) Stesso `curl` finto, ma `http://demo.lab.example.invalid/` non risponde 308 → uscita 1.
+      Nessuna riga `UNEXPECTED` nel registro.
+- [ ] (J) Ogni caso seguente parte dal finto «tutto giusto», cambia **un solo** difetto, e
+      verifica uscita 1 **e** che il registro contenga la richiesta difettosa:
+      | Difetto | Registro contiene |
+      |---|---|
+      | catalogo del demo senza `Fioreria Il Glicine` | `https://demo.lab.example.invalid/catalogo` |
+      | scheda del demo senza `Mazzo di rose rosse` | `https://demo.lab.example.invalid/prodotti/rose-rosse` |
+      | `/q/health/ready` del demo → 200 | `https://demo.lab.example.invalid/q/health/ready` |
+      | `/internal/tls/allowed` del demo → 200 | `https://demo.lab.example.invalid/internal/tls/allowed` |
+      | nessuna risposta `-I` con host demo ha HSTS | `head https://demo.lab.example.invalid/…` |
+      | ogni `http://demo.lab.example.invalid/*` → 200 | `http://demo.lab.example.invalid/…` |
 - [ ] (J) I test del giro 001 su `infra/` restano verdi:
       `./mvnw -q -Dtest='Giro001*AcceptanceTest' test` → verde.
 - [ ] `./mvnw -B -ntp verify` → verde (nessun test esistente rotto).
 - [ ] `python3 -I scripts/guard/pr_guard.py --base origin/main --head HEAD` → revisione umana
       (tocca `infra/`), nessun altro motivo di blocco.
 - [ ] Dopo il merge (umano): il run di `consegna` sul commit di merge ha il passo «Deploy and
-      smoke test» verde (`gh run list --workflow consegna --branch main -L 1` → `success`).
+      smoke test» verde (`gh run list --workflow consegna --commit <sha del merge>` →
+      `success`).
 - [ ] `curl -fsS https://demo.gerio-lab.samueleniccolai.com/catalogo | grep -c 'Fioreria Il Glicine'`
       → ≥ 1; `curl -fsS https://demo.gerio-lab.samueleniccolai.com/prodotti/rose-rosse | grep -c
       'Mazzo di rose rosse'` → ≥ 1.
@@ -91,21 +99,36 @@ Lo smoke cerca solo testi senza spazi speciali (niente prezzi con U+00A0, niente
 ## Test di accettazione (scritti prima, intoccabili dal costruttore)
 | File | Dato … quando … allora … |
 |---|---|
-| `Giro006DemoHostAcceptanceTest` | dato il `Caddyfile` con `LAB_BASE_DOMAIN=lab.example.invalid`, quando `caddy adapt` in `caddy:2.11.7`, allora esistono le route per `demo.lab.example.invalid` e `lab.example.invalid`, ciascuna con HSTS, 404 su `/internal/*` e `/q/*`, proxy verso `app:8080`; nessun altro host |
-| `Giro006DemoHostAcceptanceTest` | dato un `curl` finto «tutto giusto», quando gira `smoke.sh`, allora esce 0 e ha chiesto catalogo e scheda `rose-rosse` sul demo |
-| `Giro006DemoHostAcceptanceTest` | dato un `curl` finto con un solo difetto sul demo (testo del catalogo, testo della scheda, `/q/health/ready` pubblico, HSTS assente, http non 308), quando gira `smoke.sh`, allora esce 1 |
+File: `src/test/java/it/gerio/platform/acceptance/Giro006DemoHostAcceptanceTest.java` (JUnit
+semplice, senza `@QuarkusTest`: non serve l'app). 9 test, commit `56485d2`.
 
-Il `curl` finto è uno script scritto dal test in una cartella temporanea, in testa al `PATH`: registra
-gli argomenti in un file e risponde secondo l'URL e le opzioni (`-w '%{http_code}'` → codice; `-I`
-→ intestazioni; altrimenti corpo). Così il test non dipende da come `smoke.sh` organizza i
-controlli, solo da quali URL chiede e da come reagisce. Docker assente è un fallimento, non uno
-skip (come il giro 001).
+| Test | Dato … quando … allora … |
+|---|---|
+| `caddyAdaptsTheCaddyfileWithExactlyTheBaseAndDemoHosts` | `caddy adapt` (stdin) → uscita 0, ogni route ha `host`, host = i due attesi |
+| `eachHostHasHstsHiddenManagementPathsAndTheProxy` | per ciascun host, una route che lo contiene con HSTS, 404 su `/internal/*` e `/q/*`, proxy `app:8080` |
+| `smokePassesAndAsksForTheDemoCatalogAndProduct` | finto «tutto giusto» → uscita 0, catalogo e scheda chiesti, nessun `UNEXPECTED` |
+| `smokeFailsWhen…` (6 test) | un difetto per volta (tabella sopra) → uscita 1 e URL difettoso nel registro |
+
+Il `curl` finto (bash, scritto dal test in una cartella temporanea in testa al `PATH`):
+- registra una riga per chiamata, `<modo> <url>`, con modo `w` (c'è `-w`), `head` (c'è `-I`) o
+  `body`;
+- scompone le opzioni brevi unite (`-sI` = `-s -I`, `-fsS`); `-o`, `-m`, `-w`, `-H`, `-X`, `-D`
+  prendono un argomento (anche attaccato);
+- `-w` ha precedenza su `-I`: stampa solo la stringa di `-w` con `%{http_code}` sostituito;
+  `-f` con codice ≥ 400 esce 22; `-o FILE` scrive lì il contenuto;
+- URL conosciuti, per ciascuno dei due host: `https://H/` (200), `/q/*` e `/internal/*` (404),
+  `http://H/*` (308 con `location`); solo sul demo `/catalogo` e `/prodotti/rose-rosse` (200).
+  HSTS su ogni risposta `-I` in https. Qualunque altro URL: riga `UNEXPECTED` e uscita 6.
+
+Il costruttore quindi controlla HSTS con `curl -I` (non con `-D`) e chiede solo quegli URL.
+Docker assente è un fallimento, non uno skip (come il giro 001). Rossi oggi per asserzione (9/9);
+verdi con un prototipo di ~15 righe (blocco a due nomi + ciclo `for host`), poi scartato.
 
 ## Porte
 - Doppio senso previste:
-  - secondo sito esplicito nel `Caddyfile` invece dell'on-demand TLS di App. B.3 (si toglie
+  - secondo nome esplicito nel `Caddyfile` invece dell'on-demand TLS di App. B.3 (si toglie
     con un commit; decisione da registrare in `DECISIONI.md` e in `docs/scostamenti-4-10.md`);
-  - snippet `(common)` condiviso dai due siti;
+  - un solo blocco a due nomi invece di uno snippet;
   - controlli in più nello smoke;
   - il test usa l'immagine `caddy:2.11.7`, già fissata nel compose: non è una dipendenza nuova.
 - Senso unico: nessuna. Nota: il certificato Let's Encrypt per `demo.gerio-lab.samueleniccolai.com`
@@ -137,4 +160,14 @@ Nessuna (ricerca: no).
 - Smoke del demo anche su una pagina inesistente (`/prodotti/non-esiste` → 404 generico).
 
 ## Critica ricevuta e cosa cambia
-(dopo il critico)
+| Punto | Esito | Perché / cosa cambia |
+|---|---|---|
+| DA CORREGGERE 1: `curl` finto con opzioni brevi unite, `-w` prima di `-I`, `-f` → 22, URL non previsto → errore registrato | Accolto | Senza, il finto dava falsi verdi o falsi rossi secondo come `smoke.sh` scrive le opzioni. Descritto sopra. |
+| DA CORREGGERE 2: difetti HSTS e 308 legati all'host demo | Accolto | HSTS: nessuna risposta `-I` del demo ha l'intestazione; 308: ogni `http://demo…/*` → 200. Non dipende da quale percorso lo smoke usa. |
+| PIÙ SEMPLICE: un blocco a due nomi o snippet; test `adapt` per matcher che contiene l'host | Accolto: blocco a due nomi | Caddy unisce i due nomi in una route con `host: [a, b]`; il test accetta sia una route comune sia due. |
+| PIÙ SEMPLICE: `for host` nello smoke | Accolto | Controlli comuni una volta sola per i due host. |
+| TEST: ogni «→ 1» parte dal tutto-giusto, un difetto, URL nel registro | Accolto | Tabella nel «Fatto quando». |
+| TEST: `gh run list --commit <sha>` | Accolto | Il run giusto, non l'ultimo di `main`. |
+| TEST: caso extra `/internal/tls/allowed` del demo 200 → 1 | Accolto | Settimo test. |
+| Facoltativo 1: `Caddyfile` a `caddy adapt` via stdin | Accolto | Niente mount: funziona anche con Docker remoto in CI. |
+| Nota | — | In locale Docker Hub ha risposto 429 al primo pull di `caddy:2.11.7`, poi è passato. Se succede in CI il test fallisce (non salta): si ritenta il job. |

@@ -1,10 +1,10 @@
 ---
 giro: 007
 traguardo: T3
-fase: critica
+fase: costruzione
 inizio: 2026-10-11T21:35:29Z
 ricerca: no
-accettazione:
+accettazione: n/a
 ripreso: no
 ---
 # Piano del giro 007 — prova del demo in produzione (T3)
@@ -17,7 +17,7 @@ nessun test nuovo.
 ## Prova
 | Criterio di T3 | Prova |
 |---|---|
-| catalogo del negozio demo con dati da fioraia | `infra/smoke.sh`: `https://demo.$LAB_BASE_DOMAIN/catalogo` contiene «Fioreria Il Glicine» |
+| catalogo del negozio demo con dati da fioraia | `infra/smoke.sh`: `https://demo.$LAB_BASE_DOMAIN/catalogo` contiene «Fioreria Il Glicine»; in più, `curl` qui sotto: il catalogo elenca «Mazzo di rose rosse» |
 | pagina prodotto | `infra/smoke.sh`: `https://demo.$LAB_BASE_DOMAIN/prodotti/rose-rosse` contiene «Mazzo di rose rosse» |
 | in produzione, dopo il merge | run `consegna` 38166479287 su 26d5e92, `success`; job `deploy`, passo «Deploy and smoke test» `success` |
 | comportamento in JUnit | `Giro005*AcceptanceTest` e `Giro006DemoHostAcceptanceTest` verdi su `main` |
@@ -26,8 +26,10 @@ nessun test nuovo.
 - [ ] `gh run view 38166479287 --json conclusion,headSha` → `success`, `26d5e92…`
 - [ ] `gh run view 38166479287 --json jobs --jq '.jobs[]|select(.name=="deploy").steps[]|select(.name=="Deploy and smoke test").conclusion'` → `success`
 - [ ] `curl -fsS https://demo.$LAB_BASE_DOMAIN/catalogo | grep -c "Fioreria Il Glicine"` → ≥ 1
+- [ ] `curl -fsS https://demo.$LAB_BASE_DOMAIN/catalogo | grep -c "Mazzo di rose rosse"` → ≥ 1
 - [ ] `curl -fsS https://demo.$LAB_BASE_DOMAIN/prodotti/rose-rosse | grep -c "Mazzo di rose rosse"` → ≥ 1
-- [ ] `python3 scripts/lab/traguardo.py T3 --stato passato --giro 007 --pr <n>` poi `--mostra` → T3 `passato`
+- [ ] dopo l'apertura della PR #10: `python3 scripts/lab/traguardo.py T3 --stato passato --giro 007 --pr 10` poi `--mostra` → T3 `passato`, PR 10
+- [ ] il rapporto `007-rapporto.md` riporta l'output dei tre `curl`, con data e ora UTC dell'esecuzione
 - [ ] `docs/lab/PROGRESS.md` aggiornato: prossimo traguardo T4
 
 ## Fuori perimetro
@@ -57,4 +59,13 @@ Righe di produzione = 0; file ≤ 4 (piano, rapporto, `traguardi.json`, `PROGRES
 Nessuna (`ricerca: no`).
 
 ## Critica ricevuta e cosa cambia
-(dopo il critico)
+Accolto:
+1. Prova del catalogo debole: aggiunto `curl … /catalogo | grep -c "Mazzo di rose rosse"` ≥ 1
+   (prova che il catalogo elenca un prodotto, non solo il nome del negozio). `infra/` resta fuori
+   perimetro: lo smoke non cambia.
+2. `traguardo.py --pr` va lanciato dopo l'apertura della PR: la PR del giro è la #10, quindi
+   `--pr 10`.
+3. (facoltativo) Accolto: il rapporto registra l'output dei `curl` con data e ora UTC. Costa una
+   riga di testo e rende la prova databile.
+
+Scartato: nulla. Nessun test di accettazione nuovo (`accettazione: n/a`): giro di soli documenti.

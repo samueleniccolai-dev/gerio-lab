@@ -36,6 +36,7 @@ PR che toccano le regole o l'infrastruttura. Dettagli: [`docs/METODO.md`](docs/M
 | Ipotesi, metriche, cautele | [`docs/ESPERIMENTO.md`](docs/ESPERIMENTO.md) |
 | Specifica del prodotto | [`docs/SPEC.md`](docs/SPEC.md) |
 | Messa in funzione | [`docs/lab/SETUP.md`](docs/lab/SETUP.md) |
+| La Routine: come parte un giro, limiti, problemi, costi | [`docs/lab/ROUTINE.md`](docs/lab/ROUTINE.md) |
 
 ## Cosa è garantito e cosa no
 

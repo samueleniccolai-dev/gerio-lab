@@ -1,8 +1,8 @@
 # Statistiche — laboratorio (metodo v3) contro Gerio (metodo v2)
 
-> Generato da `scripts/metrics/statistiche.py` il 2026-10-10 20:37 UTC. Dati: `metrics/giri.csv`, `metrics/baseline-gerio.csv`. Definizioni e cautele: `docs/ESPERIMENTO.md`.
+> Generato da `scripts/metrics/statistiche.py` il 2026-10-11 10:08 UTC. Dati: `metrics/giri.csv`, `metrics/baseline-gerio.csv`. Definizioni e cautele: `docs/ESPERIMENTO.md`.
 >
-> T0 di Gerio: 2026-10-04 14:06 UTC · T0 del laboratorio: non ancora (nessun giro) · traguardi passati dal laboratorio: 0 su 8.
+> T0 di Gerio: 2026-10-04 14:06 UTC · T0 del laboratorio: 2026-10-11T09:43:32Z · traguardi passati dal laboratorio: 0 su 8.
 
 ## Traguardo per traguardo
 
@@ -11,7 +11,7 @@ decisione registrata più le domande bloccanti, nel laboratorio ratifiche più p
 
 | Traguardo | Ore dal T0 | Cicli ↔ giri | Minuti umani | Decisioni all'umano | Rilavorazioni | Minuti di CI | Righe in src/main |
 |---|---|---|---|---|---|---|---|
-| T1 Binari, parte 1: deploy automatico | 6,7 ↔ — | 1 ↔ 0 | 30 ↔ — | 6 ↔ — | 3 ↔ — | 6,9 ↔ — | 0 ↔ — |
+| T1 Binari, parte 1: deploy automatico | 6,7 ↔ — | 1 ↔ 1 | 30 ↔ 0 | 6 ↔ 1 | 3 ↔ 0 | 6,9 ↔ 0,1 | 0 ↔ 0 |
 | T2 Binari, parte 2: verifica visiva | 19,4 ↔ — | 1 ↔ 0 | 25 ↔ — | 4 ↔ — | 0 ↔ — | 8,6 ↔ — | 0 ↔ — |
 | T3 Catalogo + pagina prodotto, con dati finti da fioraia | 24,7 ↔ — | 1 ↔ 0 | 30 ↔ — | 8 ↔ — | 1 ↔ — | 12,7 ↔ — | 971 ↔ — |
 | T4 Carrello | 32,3 ↔ — | 1 ↔ 0 | 35 ↔ — | 11 ↔ — | 0 ↔ — | 14,8 ↔ — | 672 ↔ — |
@@ -36,7 +36,11 @@ Gerio, cicli senza stima dei minuti umani nel rapporto: 6. I minuti umani dei lo
 
 ## Giri del laboratorio
 
-Nessun giro ancora.
+| Giro | Traguardo | Esito | PR | Minuti | Merge automatico | Bloccanti | Dubbi | Mutazioni prese/provate | Minuti umani |
+|---|---|---|---|---|---|---|---|---|---|
+| 001 | T1 | aperta | #2 | 26 | — | 0 | 4 | 2/3 | 0 |
+
+Merge fuori catena (PR di un giro entrate in main senza i controlli né la revisione umana): 0.
 
 
 ## Cautele

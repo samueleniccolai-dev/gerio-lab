@@ -1,7 +1,7 @@
 ---
 giro: 001
 traguardo: T1
-fase: revisione
+fase: chiusura
 inizio: 2026-10-11T09:43:32Z
 ricerca: no
 accettazione: fbc416d

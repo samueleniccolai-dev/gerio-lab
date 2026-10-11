@@ -15,3 +15,4 @@ Stato: `—` (in vigore) · `contestata` · `cambiata (giro NNN)` · `risposta d
 | 4 | 11/10 | 001 | registro | Token GHCR solo su stdin di ssh verso `remote.sh`; `docker logout` nel trap | token in riga di comando | il token non compare in `ps` | — |
 | 5 | 11/10 | 001 | ratifica | Dopo ogni deploy 503 per alcuni secondi (health check di Caddy, fino a ~30 s) | health_interval corto | accettabile per la demo; nel runbook | — |
 | 6 | 11/10 | 002 | registro | `passato_il` di T1 = fine del passo «Deploy and smoke test» (15:25:09Z) | ora di esecuzione di traguardo.py | il criterio chiede lo smoke verde | — |
+| 7 | 11/10 | 003 | senso unico | Dipendenza E2E: Playwright Java 1.63.0, scope `test`, solo Chromium | Quarkiverse; Selenium + Testcontainers | risposta umana: «Procedi con A» (da Gerio: sì) | risposta del 11/10 |

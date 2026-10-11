@@ -41,6 +41,11 @@
             <groupId>io.quarkus</groupId>
             <artifactId>quarkus-flyway</artifactId>
         </dependency>
+        <!-- Giro 008 (T4): CSRF protection for form POSTs (SPEC 10.2). Approved by a human; version from the BOM. -->
+        <dependency>
+            <groupId>io.quarkus</groupId>
+            <artifactId>quarkus-rest-csrf</artifactId>
+        </dependency>
         <dependency>
             <groupId>io.quarkus</groupId>
             <artifactId>quarkus-rest-qute</artifactId>

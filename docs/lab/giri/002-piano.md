@@ -1,7 +1,7 @@
 ---
 giro: 002
 traguardo: T1
-fase: revisione
+fase: chiusura
 inizio: 2026-10-11T15:25:50Z
 ricerca: no
 accettazione:

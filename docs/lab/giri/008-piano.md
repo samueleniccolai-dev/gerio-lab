@@ -1,10 +1,10 @@
 ---
 giro: 008
 traguardo: T4
-fase: critica
+fase: costruzione
 inizio: 2026-10-11T21:46:27Z
 ricerca: sì
-accettazione:
+accettazione: 336b46d
 ripreso: no
 ---
 # Piano del giro 008 — Carrello del negozio demo, senza JavaScript
@@ -47,35 +47,53 @@ traguardo non passato; con form classici (SPEC §4.4, miglioramento progressivo)
     not null unique` (casuale), `created_at`, `updated_at`, `version`. Scostamento minore da §6 (lì
     l'id è il token): da annotare in `docs/scostamenti-4-10.md`.
   - `cart_item`: `id`, `tenant_id`, `cart_id` → `cart` (`on delete cascade`), `variant_id`,
-    `quantity int not null check (quantity between 1 and 20)`, `unique (cart_id, variant_id)`.
+    `quantity int not null check (quantity between 1 and 20)`, `created_at`, `updated_at`,
+    `version` (stessi default di V3: `now()`, `now()`, `0`; `CartItem` estende `EntityBase`, lo
+    schema è validato all'avvio), `unique (cart_id, variant_id)`.
     Le FK verso `cart` e `product_variant` sono **composte con `tenant_id`**
     (`(tenant_id, variant_id) references product_variant (tenant_id, id)`): una riga non può
     puntare a una variante di un altro negozio. Niente `addon_id` (la tabella `addon` non esiste).
 - **Package `cart/`**: `Cart`, `CartItem`, `CartService` (§4.3). `CartService` chiede le varianti al
   catalogo tramite un metodo di `CatalogService` (nome, variante, prezzo corrente in centesimi,
   visibilità), non legge entità del catalogo.
-- **Cookie tecnico** `cart`: token casuale (≥ 32 byte da `SecureRandom`, base64url), `HttpOnly`,
-  `SameSite=Lax`, `Path=/`, `Max-Age` 7 giorni (§12.4), `Secure` fuori da dev e test. Il cookie vale
-  per l'host, quindi per il negozio; il server comunque cerca il carrello per token **e** negozio:
-  un token di un altro negozio è un carrello vuoto. Il cookie si crea solo alla prima aggiunta.
+- **Cookie tecnico** `cart`: il token lo genera **sempre il server** (≥ 32 byte da
+  `SecureRandom`, base64url), `HttpOnly`, `SameSite=Lax`, `Path=/`, `Max-Age` 7 giorni (§12.4),
+  `Secure` fuori da dev e test. Il cookie si crea alla prima aggiunta e si rinnova (stesso valore,
+  `Max-Age=604800`) a ogni `POST` riuscito del carrello. Il server cerca il carrello per token
+  **e** negozio. Un token sconosciuto o di un altro negozio si **ignora**: in lettura è un carrello
+  vuoto; alla prima aggiunta nasce un carrello nuovo con un token nuovo e un cookie nuovo (niente
+  fixation, nessuna violazione di `unique (token)`, il carrello dell'altro negozio non si tocca).
+- **CSRF** (DECISIONI n. 15): `quarkus-rest-csrf` senza versione nel `pom.xml`; ogni form `POST`
+  porta `<input type="hidden" name="{inject:csrf.parameterName}" value="{inject:csrf.token}">`
+  (campo e cookie `csrf-token`, default). Niente `token-signature-key` (sarebbe un segreto nuovo in
+  `infra/`): il valore del campo è uguale a quello del cookie. `create-token-path` resta al
+  default (token su ogni `GET`). In prod una riga di configurazione:
+  `%prod.quarkus.rest-csrf.cookie-force-secure=true`. Errore CSRF → 400.
+- **`CartService.add`** (nessun SQL nativo, nessun upsert): carica il `Cart` con
+  `PESSIMISTIC_WRITE` (serializza le aggiunte sullo stesso carrello), cerca il `CartItem` per
+  `(cart, variant)`; se c'è imposta `min(q + n, 20)`, se no `persist`. Aggiunta, aggiornamento e
+  rimozione **non modificano la riga `cart`** (né `updated_at` né `version`): il lock serve solo a
+  serializzare, quindi nessuna `OptimisticLockException` su `Cart`. `unique (cart_id, variant_id)`
+  resta come rete di sicurezza. Filtro del negozio, `Clock` e `version` passano da Hibernate.
 - **Pagine e azioni** (risorsa in `storefront/`, nessuna logica di business nella risorsa):
 
 | Metodo e percorso | Parametri form | Effetto | Risposta |
 |---|---|---|---|
 | `GET /carrello` | — | righe e totale | 200 HTML |
-| `POST /carrello/aggiungi` | `variantId`, `quantity` (default 1) | aggiunge; se la variante c'è già somma le quantità (massimo 20) | 303 → `/carrello` |
-| `POST /carrello/righe/{itemId}` | `quantity` | imposta la quantità; `0` toglie la riga | 303 → `/carrello` |
+| `POST /carrello/aggiungi` | `variantId`, `quantity` (1..20, default 1) | aggiunge; se la variante c'è già somma le quantità (massimo 20) | 303 → `/carrello` |
+| `POST /carrello/righe/{itemId}` | `quantity` (0..20) | imposta la quantità; `0` toglie la riga | 303 → `/carrello` |
 | `POST /carrello/righe/{itemId}/rimuovi` | — | toglie la riga | 303 → `/carrello` |
 
-  Errori: variante inesistente, inattiva, di prodotto inattivo o di un altro negozio → 404;
-  `quantity` non numerica, negativa o oltre 20 → 400; riga di un altro carrello o di un altro
-  negozio → 404. In tutti i casi il carrello resta com'era. Sul dominio della piattaforma tutte le
+  Errori: variante inesistente, inattiva, di prodotto inattivo, di categoria nascosta o di un
+  altro negozio → 404; `quantity` non numerica, negativa, oltre 20, o `0` in `/aggiungi` → 400;
+  riga di un altro carrello (anche dello stesso negozio) o di un altro negozio → 404. In tutti i casi il carrello resta com'era. Sul dominio della piattaforma tutte le
   rotte del carrello → 404 (come il catalogo).
 - **Scheda prodotto**: per ogni variante un form «Aggiungi al carrello» (campo `variantId`
   nascosto). **Layout**: link «Carrello» nell'intestazione.
-- **Pagina carrello**: titolo «Carrello»; per ogni riga nome del prodotto con link alla scheda,
+- **Pagina carrello**: titolo «Carrello»; per ogni riga, in quest'ordine, nome del prodotto con
+  link alla scheda (`href="/prodotti/<slug>"`, uno per riga),
   variante, prezzo unitario, campo quantità con etichetta (`<label>`) e pulsante «Aggiorna»,
-  pulsante «Rimuovi», subtotale della riga; in fondo «Totale prodotti» con l'importo e la nota
+  pulsante «Rimuovi» (form `POST /carrello/righe/{id}/rimuovi`, uno per riga), subtotale della riga; in fondo «Totale prodotti» con l'importo e la nota
   «IVA inclusa. Consegna calcolata al checkout.» Carrello vuoto: «Il tuo carrello è vuoto.» con
   link al catalogo. I prezzi sono quelli correnti della variante (la fotografia del prezzo si fa
   nell'ordine, T5). Importi `long` in centesimi, formattati solo con `Prices.format`.
@@ -93,21 +111,25 @@ Host `demo.localhost` (test). Scenario dei test di accettazione:
 | 6 | cambia l'orchidea a 0 | nessuna | carrello vuoto |
 
 Varianti da rifiutare (404): «Bouquet di stagione» · Extra (6900, inattiva); «Corona dell'Avvento»
-· Unica (prodotto inattivo); «Stella di Natale» (categoria nascosta); la variante di «Fiori di
-Marco» (secondo negozio di `Giro005DemoData`).
+· Unica (prodotto inattivo); «Stella di Natale» · Vaso 14 cm (categoria nascosta); «Bouquet di
+stagione» · Unico (3000) di «Fiori di Marco» (secondo negozio di `Giro005DemoData`, host
+`fiori-di-marco.localhost`). Concorrenza: dato un carrello con l'orchidea × 1, 10 aggiunte
+parallele di Medio × 1 → Medio × 10.
 
 ## Fatto quando — controlli eseguibili
 - [ ] `./mvnw -q -Dtest='Giro008*AcceptanceTest' test` → verde. Copre:
   - [ ] `GET /carrello` su `demo.localhost` senza cookie → 200, «Il tuo carrello è vuoto.», link `/catalogo`.
-  - [ ] La scheda `/prodotti/bouquet-di-stagione` ha un form `POST /carrello/aggiungi` per ognuna delle 3 varianti attive (nessuno per Extra).
-  - [ ] Passi 1–6 della tabella: ogni `POST` → 303 su `/carrello`; la pagina mostra righe, subtotali e «Totale prodotti» attesi.
-  - [ ] La prima aggiunta imposta il cookie `cart` con `HttpOnly`, `SameSite=Lax`, `Path=/`, `Max-Age=604800`.
-  - [ ] Variante inattiva, prodotto inattivo, categoria nascosta, variante di Marco → 404, carrello invariato.
-  - [ ] `quantity` = `-1`, `21`, `abc` → 400, carrello invariato; aggiunte che superano 20 → quantità 20.
-  - [ ] Isolamento: il cookie del carrello demo inviato a `marco.localhost` → carrello vuoto; `POST /carrello/righe/{id della riga demo}` da Marco → 404 e la riga demo resta; un token inventato → carrello vuoto, nessun errore 500.
+  - [ ] `GET /prodotti/bouquet-di-stagione` imposta il cookie `csrf-token`; ha un form `POST /carrello/aggiungi` per ognuna delle 3 varianti attive (nessuno per Extra); ogni form ha il campo nascosto `csrf-token` con valore uguale al cookie.
+  - [ ] Passi 1–6 della tabella: ogni `POST` → 303 su `/carrello`; la pagina mostra righe (una per variante), quantità, subtotali e «Totale prodotti» attesi.
+  - [ ] La prima aggiunta imposta il cookie `cart` con `HttpOnly`, `SameSite=Lax`, `Path=/`, `Max-Age=604800`; la seconda lo rinnova con lo stesso valore.
+  - [ ] Con token CSRF valido: variante inattiva, prodotto inattivo, categoria nascosta, variante di Marco, variante inesistente → 404; `quantity` = `0`, `-1`, `21`, `abc` in `/aggiungi` e `-1`, `21`, `abc` in `/righe/{id}` → 400. Dopo ognuno `/carrello` riletto è invariato; la stessa richiesta con una variante valida e `quantity=1` → 303 (il token era buono).
+  - [ ] Aggiunte che superano 20 → quantità 20.
+  - [ ] Isolamento stesso negozio: un secondo browser su `demo.localhost` che fa `POST /carrello/righe/{id}` o `/rimuovi` su una riga del primo → 404; il carrello del primo, riletto, è intatto.
+  - [ ] Isolamento tra negozi: il cookie `cart` demo inviato a `fiori-di-marco.localhost` → carrello vuoto; `POST /carrello/righe/{id della riga demo}` (e `/rimuovi`) da Marco → 404; aggiunta della variante di Marco con il cookie demo → 303 con un cookie `cart` nuovo e diverso, il carrello demo resta invariato.
+  - [ ] Token inventato nel cookie `cart` → `GET /carrello` vuoto (200); aggiunta → 303 con un cookie `cart` nuovo, diverso da quello inventato.
   - [ ] Sul dominio della piattaforma (`localhost`) `GET /carrello` → 404.
-  - [ ] Difesa CSRF secondo la risposta alla DOMANDA (A: senza token → 400; B: `Origin` estraneo → 403); carrello invariato.
-  - [ ] Due `POST /carrello/aggiungi` concorrenti della stessa variante sullo stesso carrello → una riga sola, quantità 2.
+  - [ ] CSRF: `POST /carrello/aggiungi` senza campo, senza cookie o con valori diversi → 400; carrello invariato.
+  - [ ] Concorrenza: 10 `POST /carrello/aggiungi` di Medio × 1 in parallelo (barriera), stesso cookie `cart` e stesso token CSRF → tutti 303; una sola riga Medio, quantità 10.
 - [ ] `./mvnw -q -Dtest=SchemaRulesTest,TenantIsolationTest,EndpointIsolationTest test` → verde con le tabelle nuove.
 - [ ] `./mvnw -B -ntp verify` → verde (anche la verifica visiva esistente).
 - [ ] Dopo il deploy: `curl -s https://demo.<LAB_BASE_DOMAIN>/carrello` → 200 con «Il tuo carrello è vuoto.»; prova a mano dei passi 1–6 nel browser, annotata nel rapporto.
@@ -123,14 +145,20 @@ Marco» (secondo negozio di `Giro005DemoData`).
 - Job che cancella i carrelli abbandonati dopo 7 giorni (§12.4): il cookie scade, le righe restano.
 - Limiti di frequenza (§10.2) sulle aggiunte.
 - Sistemare le FK di V3 senza `tenant_id` (dubbio in PROGRESS): non si tocca una migrazione su `main`.
+- `token-signature-key` del CSRF (segreto nuovo); `create-token-path` diverso dal default.
+- Avviso «massimo 20 per prodotto» quando un'aggiunta viene troncata.
+- Comportamento del filtro CSRF sul webhook Stripe: si prova in T5.
 
 ## Test di accettazione (scritti prima, intoccabili dal costruttore)
 | File | Dato … quando … allora … |
 |---|---|
-| `Giro008CartAcceptanceTest` | dato il seme demo, quando si eseguono i passi 1–6, allora righe e totali sono quelli della tabella |
-| `Giro008CartAcceptanceTest` | dato il seme, quando si aggiungono varianti non vendibili o quantità non valide, allora 404/400 e carrello invariato |
-| `Giro008CartIsolationAcceptanceTest` | dati demo e Marco, quando il cookie o l'id di riga di un negozio arrivano all'altro, allora carrello vuoto o 404 |
-| `Giro008CartAcceptanceTest` | dato un `POST` senza difesa CSRF valida, allora rifiutato (codice secondo la risposta) |
+| `Giro008CartAcceptanceTest` | dato il seme demo, quando si eseguono i passi 1–6, allora righe e totali sono quelli della tabella; cookie `cart` con gli attributi attesi e rinnovato |
+| `Giro008CartAcceptanceTest` | dato il seme, quando si aggiungono varianti non vendibili o quantità non valide (token CSRF valido), allora 404/400, carrello riletto invariato, controllo positivo 303 |
+| `Giro008CartAcceptanceTest` | dato un `POST` senza CSRF valido, allora 400 e carrello invariato; la scheda dà cookie e campo nascosto uguali |
+| `Giro008CartAcceptanceTest` | dato un carrello, quando arrivano 10 aggiunte parallele, allora una riga con quantità 10 |
+| `Giro008CartIsolationAcceptanceTest` | dati due browser demo, e demo e Marco, quando il cookie o l'id di riga di uno arrivano all'altro, allora carrello vuoto, 404 o cookie nuovo, e l'altro carrello intatto |
+
+La pulizia dei dati di test cancella `cart_item` e `cart` prima di `TestShops.deleteAll()` (solo se le tabelle esistono).
 
 ## Porte
 - Doppio senso previste: migrazione additiva `V4__cart.sql`; nomi di rotte e cookie; quantità
@@ -139,9 +167,10 @@ Marco» (secondo negozio di `Giro005DemoData`).
 - Senso unico: **DOMANDA** sopra (dipendenza `quarkus-rest-csrf`).
 
 ## Rischi di concorrenza
-- Doppio clic su «Aggiungi»: due inserimenti della stessa variante. Difesa: `unique (cart_id,
-  variant_id)` e un solo `insert … on conflict … do update set quantity = least(quantity + n, 20)`;
-  test con due richieste parallele.
+- Doppio clic su «Aggiungi»: `Cart` caricato con `PESSIMISTIC_WRITE`, poi cerca-o-crea della riga;
+  le aggiunte sullo stesso carrello si mettono in fila. `unique (cart_id, variant_id)` resta come
+  rete. La riga `cart` non si aggiorna, quindi nessun conflitto di `version` su `Cart`. Test con 10
+  richieste parallele dietro una barriera.
 - Doppio invio di «Aggiorna» o «Rimuovi»: «Aggiorna» imposta, non somma, quindi è idempotente; il
   secondo «Rimuovi» trova una riga che non c'è più → 404 senza effetti. Accettato.
 - Prima aggiunta in due schede insieme senza cookie: nascono due carrelli, vince l'ultimo cookie;
@@ -163,6 +192,28 @@ Righe di produzione ≤ 450 (Java + template + SQL); file ≤ 12; una sessione.
 - Contatore «Carrello (n)» nell'intestazione.
 - Job di pulizia dei carrelli oltre 7 giorni (§12.4).
 - Fusione dei carrelli nati in due schede.
+- Avviso «massimo 20» quando un'aggiunta viene troncata.
+- Test di aggiunta e aggiornamento in parallelo sulla stessa riga.
 
 ## Critica ricevuta e cosa cambia
-(dopo il critico)
+Accolto:
+1. `cart_item` con `created_at`, `updated_at`, `version` e default come V3 (schema validato).
+2. Niente upsert SQL nativo: salterebbe filtro del negozio, `Clock` e `version`.
+3. `CartService.add` con `Cart` in `PESSIMISTIC_WRITE` e cerca-o-crea; la riga `cart` non si
+   modifica, quindi niente `OptimisticLockException`; `unique` come rete.
+4. Token sempre generato dal server; token ignoto o di un altro negozio ignorato, cookie nuovo
+   alla prima aggiunta.
+5. `quantity=0` in `/aggiungi` → 400 (1..20).
+6. Niente `token-signature-key`, `create-token-path` al default; `cookie-force-secure` in prod come
+   una riga `%prod.` di configurazione.
+7. Test: concorrenza a 10 con barriera; isolamento tra due carrelli dello stesso negozio; errori con
+   token CSRF valido e controllo positivo; «invariato» verificato rileggendo `/carrello`; cookie
+   demo a Marco con aggiunta → cookie nuovo; cookie e campo CSRF uguali sulla scheda.
+8. Facoltativi: rinnovo del `Max-Age` a ogni `POST` (accolto, una riga, testato); test della
+   piattaforma solo `GET` (accolto).
+9. Corretto l'host di Marco: `fiori-di-marco.localhost` (quello di `Giro005DemoData`).
+
+Scartato o rimandato:
+- Avviso «massimo 20» rimandabile → «Idee per dopo».
+- Aggiunta e aggiornamento in parallelo (facoltativo) → «Idee per dopo»: la serializzazione col lock
+  è già provata dal test a 10.

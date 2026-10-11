@@ -1,7 +1,7 @@
 ---
 giro: 003
 traguardo: T2
-fase: critica
+fase: finale
 inizio: 2026-10-11T15:36:45Z
 ricerca: no
 accettazione:
@@ -55,22 +55,51 @@ T2 intero: è piccolo (un test E2E e la cartella degli screenshot) e dà a ogni 
 
 Nessun prezzo: T2 non tocca il catalogo.
 
+## Stato all'inizio della costruzione
+La dipendenza approvata (`com.microsoft.playwright:playwright:1.63.0`, scope `test`) è già nel
+`pom.xml`, in un commit `build(test):` del pianificatore: senza, i test di accettazione non
+compilano. Il test di accettazione **è** il primo E2E: gestisce da sé il ciclo di vita del browser
+(una classe di supporto senza un secondo utilizzatore sarebbe codice senza uso, vedi «Idee per
+dopo»). Al costruttore restano: registro in `docs/verifiche.md`, `verify` completo con Spotless,
+run `ci` verde con l'artefatto.
+
+## Browser nell'ambiente del costruttore (proxy con CA propria)
+- Qui `PLAYWRIGHT_BROWSERS_PATH=/opt/pw-browsers` e `PLAYWRIGHT_SKIP_BROWSER_DOWNLOAD=1`: Playwright
+  **non** scarica il browser da solo. La build 1.63.0 vuole `chromium_headless_shell-1243`
+  (in `/opt/pw-browsers` c'era solo la 1194). Il pianificatore l'ha già scaricata così:
+  ```
+  ./mvnw -q dependency:build-classpath -Dmdep.includeScope=test -Dmdep.outputFile=<scratch>/cp.txt
+  PLAYWRIGHT_SKIP_BROWSER_DOWNLOAD= java -cp "$(cat <scratch>/cp.txt)" \
+    com.microsoft.playwright.CLI install --only-shell chromium
+  ```
+  Il download passa dal proxy (`HTTPS_PROXY`) e si fida della CA con `NODE_EXTRA_CA_CERTS`
+  (già impostata, `/root/.ccr/README.md`). Se in una nuova sessione manca, si ripete il comando.
+- In CI (`ubuntu-latest`) la variabile di salto non c'è: `Playwright.create()` scarica Chromium
+  al primo avvio.
+- In nessun caso il test si salta: niente `assumeTrue`, niente `@Disabled`, niente profili che lo
+  escludono. Browser assente = rosso.
+
 ## Fatto quando — controlli eseguibili
-- [ ] `./mvnw -q -Dtest='Giro003*AcceptanceTest' test` → verde; il test avvia Chromium headless
-  reale (non HtmlUnit, non un client HTTP) contro l'app di test su `quarkus.http.test-port`.
-- [ ] Aperto `http://fioraia-demo.localhost:<porta>/` nel browser → l'`h1` letto dal DOM è
+- [ ] `./mvnw -q -Dtest='Giro003*AcceptanceTest' test` → verde (5 test); il browser è Chromium
+  reale (`browserType().name()` = `chromium`, user agent con `Chrome/`), headless, contro l'app di
+  test sulla porta data da `@TestHTTPResource` (mai `8081` scritto a mano).
+- [ ] Aperto `http://fioraia-demo.localhost:<porta>/` → `200`, l'`h1` letto dal DOM è
   `Le Rose di Lucia`; il testo della pagina non contiene `Fiori di Marco`.
-- [ ] Aperto `http://localhost:<porta>/` → la pagina contiene `Negozi locali online` e nessun nome
-  di negozio.
-- [ ] Dopo il test esistono `target/e2e-screenshots/storefront-home.png` e
-  `target/e2e-screenshots/platform-landing.png`: file PNG validi (firma `89 50 4E 47`), larghi
-  almeno 360 px (viewport mobile 390×844, SPEC §2.4 «prima il telefono»).
+- [ ] Aperto `http://fiori-di-marco.localhost:<porta>/` → `200`, `h1` `Fiori di Marco`, nessun
+  `Le Rose di Lucia` (isolamento nei due sensi; entrambi i negozi inseriti in `@BeforeEach`).
+- [ ] Aperto `http://localhost:<porta>/` → `200`, contiene `Negozi locali online`, non contiene né
+  `Le Rose di Lucia` né `Fiori di Marco`.
+- [ ] Ogni caso salva e controlla il **proprio** PNG nello stesso metodo (`@BeforeAll` cancella i
+  due file prima): `target/e2e-screenshots/storefront-home.png` e
+  `target/e2e-screenshots/platform-landing.png`, firma PNG, `fullPage(false)`,
+  `deviceScaleFactor 1`, esattamente **390×844** px (SPEC §2.4 «prima il telefono»).
 - [ ] Browser che non parte = test **rosso**, mai saltato (niente `assumeTrue`, niente `@Disabled`).
 - [ ] `./mvnw -B -ntp verify` → verde (E2E inclusi, Spotless incluso).
 - [ ] Sulla PR del giro, run `ci` verde e artefatto presente:
   `gh api repos/{owner}/{repo}/actions/runs/<run>/artifacts --jq '.artifacts[].name'` →
   contiene `e2e-screenshots`.
-- [ ] `docs/verifiche.md` registra la versione della dipendenza con fonte e data.
+- [ ] `docs/verifiche.md` ha una riga datata `| 2026-…` con `com.microsoft.playwright`, `1.63.0` e
+  la fonte (Maven Central, playwright.dev o GitHub): provato dal test di accettazione.
 
 ## Fuori perimetro
 - Acquisto completo, back-office, giro consegne, Stripe: gli E2E di SPEC §14 su quei flussi
@@ -85,15 +114,17 @@ Nessun prezzo: T2 non tocca il catalogo.
 ## Test di accettazione (scritti prima, intoccabili dal costruttore)
 | File | Dato … quando … allora … |
 |---|---|
-| `Giro003VisualAcceptanceTest` | dato il negozio demo, quando Chromium apre il suo host, allora l'`h1` è `Le Rose di Lucia` e non compare `Fiori di Marco` |
-| `Giro003VisualAcceptanceTest` | quando Chromium apre `localhost`, allora si vede la landing senza nomi di negozio |
-| `Giro003VisualAcceptanceTest` | dopo i due casi, allora i due PNG esistono, validi, larghezza ≥ 360 px |
+| `Giro003VisualAcceptanceTest` | quando parte il browser, allora è un Chromium vero |
+| `Giro003VisualAcceptanceTest` | dato il negozio demo, quando Chromium apre il suo host, allora l'`h1` è `Le Rose di Lucia`, non compare `Fiori di Marco` e `storefront-home.png` è un PNG 390×844 |
+| `Giro003VisualAcceptanceTest` | dato il secondo negozio, quando Chromium apre il suo host, allora l'`h1` è `Fiori di Marco` e non compare `Le Rose di Lucia` |
+| `Giro003VisualAcceptanceTest` | quando Chromium apre `localhost`, allora si vede la landing senza nessuno dei due nomi e `platform-landing.png` è un PNG 390×844 |
+| `Giro003VisualAcceptanceTest` | `docs/verifiche.md` registra Playwright 1.63.0 con fonte e data |
 
-I test si scrivono solo dopo la risposta alla domanda (devono compilare: senza la dipendenza non
-compilano).
+Stato alla consegna al costruttore: 4 verdi (la dipendenza approvata è già nel `pom.xml` e il
+Chromium 1243 è scaricato), 1 rosso per asserzione (`verifiche.md`).
 
 ## Porte
-- Doppio senso previste: classe di supporto nei test (`src/test/java/.../e2e/`); nomi dei file
+- Doppio senso previste: nomi dei file
   degli screenshot; viewport 390×844; cartella `target/e2e-screenshots/`.
 - Senso unico: **DOMANDA** sopra (dipendenza Maven nuova + binario del browser). Eventuale
   `scripts/ci/prepare.sh`: protetto, rientra nella stessa revisione umana.
@@ -106,6 +137,9 @@ CI che passa a Ubuntu 26 dal 19/10 (PROGRESS) e librerie di sistema di Chromium:
 
 ## Budget
 Righe di produzione: 0 (solo test, `pom.xml`, documenti). File ≤ 5. Una sessione.
+Rischio CI: il passaggio di `ubuntu-latest` a Ubuntu 26 dal 19/10 potrebbe lasciare Chromium senza
+librerie di sistema supportate da Playwright; se il run `ci` fallisce per questo dopo il 19/10, si
+rilancia e si annota nel rapporto (eventuale `scripts/ci/prepare.sh`, protetto).
 
 ## Domande per il ricercatore (al massimo 3)
 Nessuna: `ricerca: no` (binari e test; il cliente non vede niente di nuovo).
@@ -113,6 +147,30 @@ Nessuna: `ricerca: no` (binari e test; il cliente non vede niente di nuovo).
 ## Idee per dopo
 - axe-core dentro gli E2E (SPEC §14), con la sua porta.
 - Screenshot anche in viewport desktop.
+- Classe di supporto piccola in `src/test/java/it/gerio/platform/e2e/` (avvio/chiusura di
+  Chromium, contesto mobile 390×844, salvataggio PNG): da estrarre dal test del giro 003 quando
+  arriva il secondo E2E (T3), non prima.
+- Cache di `~/.cache/ms-playwright` in CI: oggi ogni run riscarica Chromium (~115–150 MB). Toccare
+  `ci.yml` è protetto: proposta per l'umano.
 
 ## Critica ricevuta e cosa cambia
-(dopo il critico)
+Accolti 2 su 2 «DA CORREGGERE», 4 su 4 note sui test, 3 su 3 facoltativi; accolti in parte 2 «altro».
+
+| Punto | Esito | Come |
+|---|---|---|
+| 1. Screenshot dipendenti dall'ordine e PNG vecchi | accolto | ogni caso salva e controlla il suo PNG; `@BeforeAll` cancella i due file |
+| 2. Download di Chromium dietro il proxy | accolto | sezione «Browser nell'ambiente del costruttore»; il test non si salta mai |
+| Classe di supporto in `e2e/` piccola | accolto in parte | rimandata a T3 («Idee per dopo»): oggi non avrebbe un secondo utilizzatore, e i test di accettazione non possono usare classi che non esistono |
+| Ubuntu 26 dal 19/10 | accolto | nota in «Budget»: se cade, si rilancia `ci` e si annota |
+| Larghezza == 390 con `deviceScaleFactor 1` | accolto | anche altezza == 844 |
+| Browser reale | accolto | `browserType().name()` + user agent `Chrome/` (non `HeadlessChrome`: dipende dalla modalità headless) |
+| Fiori di Marco davvero inserito | accolto | entrambi in `@BeforeEach`, più il caso simmetrico sul suo host |
+| Landing senza entrambi i nomi | accolto | |
+| URL da `@TestHTTPResource` | accolto | |
+| Cache Chromium in CI | accolto | «Idee per dopo» |
+| `fullPage(false)` | accolto | |
+
+Nota: con la dipendenza nel `pom.xml` (approvata, necessaria alla compilazione) i casi col browser
+passano già. Non è un piano sbagliato: il lavoro di prodotto di T2 era la dipendenza più il primo
+E2E, e il primo E2E è il test di accettazione stesso. Il rosso resta su `verifiche.md`; il resto
+del «Fatto quando» (verify, CI, artefatto) si prova con i comandi.

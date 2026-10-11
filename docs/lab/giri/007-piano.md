@@ -1,7 +1,7 @@
 ---
 giro: 007
 traguardo: T3
-fase: revisione
+fase: chiusura
 inizio: 2026-10-11T21:35:29Z
 ricerca: no
 accettazione: n/a

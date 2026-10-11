@@ -2,7 +2,7 @@
 
 **Obiettivo:** traguardi T1–T8 di `docs/lab/traguardi.json` — demo in produzione con ordine
 end-to-end in Stripe test, lo stesso piano di Gerio al 4/10/2026.
-**Giro corrente:** 007 · **Fase:** chiusura · **PR aperta:** #10 · **Blocchi:** nessuno
+**Giro corrente:** 008 · **Fase:** domanda · **PR aperta:** #11 · **Blocchi:** nessuno
 **T0 del laboratorio:** 2026-10-11T09:43:32Z
 
 ## Prossimo
@@ -16,6 +16,8 @@ Dopo il merge di #10: giro su T4 (primo traguardo non passato).
 - 005 — T3 in-corso: catalogo, categorie, scheda prodotto, seme demo `@Startup`; 230 test. PR #8.
 
 ## Per l'umano
+
+- **DOMANDA giro 008 (PR #11):** il carrello porta i primi form POST; serve `io.quarkus:quarkus-rest-csrf` (dipendenza nuova, SPEC §10.2)? A (raccomandata) sì · B no, Origin/SameSite fino a T5 · C token a mano (sconsigliata). Dettagli in `docs/lab/giri/008-piano.md`.
 
 - Ratifiche da leggere: 503 dopo ogni deploy (n. 5); seme demo in prod (n. 8); testi scheda (n. 9).
 - Avviso CI: `ubuntu-latest` passa a Ubuntu 26 dal 19/10 (`.github/` è protetto: decidi tu).

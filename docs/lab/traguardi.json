@@ -28,14 +28,16 @@
         ],
         "completato": "2026-10-04T20:45:33Z"
       },
-      "stato": "in-corso",
+      "stato": "passato",
       "giri": [
-        "001"
+        "001",
+        "002"
       ],
       "pr": [
-        2
+        2,
+        3
       ],
-      "passato_il": null
+      "passato_il": "2026-10-11T15:25:09Z"
     },
     {
       "id": "T2",

@@ -2,21 +2,22 @@
 
 **Obiettivo:** traguardi T1–T8 di `docs/lab/traguardi.json` — demo in produzione con ordine
 end-to-end in Stripe test, lo stesso piano di Gerio al 4/10/2026.
-**Giro corrente:** 001 · **Fase:** chiusura · **PR aperta:** #2 · **Blocchi:** nessuno
+**Giro corrente:** 002 · **Fase:** chiusura · **PR aperta:** #3 · **Blocchi:** nessuno
 **T0 del laboratorio:** 2026-10-11T09:43:32Z
 
 ## Prossimo
 
-Dopo il merge di #2: verificare il primo deploy reale (T1). Poi T2 (dipendenza nuova: porta a senso unico).
+Dopo il merge di #3: T2 (verifica visiva). Dipendenza nuova (Playwright o equivalente): porta a senso unico, richiesta formale con alternativa.
 
 ## Ultimi giri
 
-- 001 — T1 in-corso: file di deploy in `infra/`, 19 test di accettazione, revisore senza bloccanti. PR #2.
+- 002 — T1 passato: deploy reale provato (run 38151028698, smoke ok), solo documenti. PR #3.
+- 001 — T1 in-corso: file di deploy in `infra/`, 19 test di accettazione. PR #2 (mergiata).
 
 ## Per l'umano
 
 - Domande aperte: nessuna.
 - Ratifiche da leggere: 503 per alcuni secondi dopo ogni deploy (DECISIONI n. 5).
-- Servono server, DNS e segreti (`docs/lab/SETUP.md` §5) perché il deploy giri davvero.
+- Avviso CI: `ubuntu-latest` passa a Ubuntu 26 dal 19/10 (`.github/` è protetto: decidi tu).
 
-**Ultimo aggiornamento:** 2026-10-11 — giro 001.
+**Ultimo aggiornamento:** 2026-10-11 — giro 002.

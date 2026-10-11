@@ -67,6 +67,13 @@
             <artifactId>rest-assured</artifactId>
             <scope>test</scope>
         </dependency>
+        <!-- Giro 003 (T2): real-browser E2E and screenshots, SPEC §14. Approved by a human. -->
+        <dependency>
+            <groupId>com.microsoft.playwright</groupId>
+            <artifactId>playwright</artifactId>
+            <version>1.63.0</version>
+            <scope>test</scope>
+        </dependency>
     </dependencies>
 
     <build>

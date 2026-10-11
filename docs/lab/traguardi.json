@@ -85,10 +85,12 @@
       },
       "stato": "in-corso",
       "giri": [
-        "005"
+        "005",
+        "006"
       ],
       "pr": [
-        8
+        8,
+        9
       ],
       "passato_il": null
     },

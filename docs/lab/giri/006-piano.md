@@ -1,7 +1,7 @@
 ---
 giro: 006
 traguardo: T3
-fase: revisione
+fase: chiusura
 inizio: 2026-10-11T18:43:38Z
 ricerca: no
 accettazione: 56485d2d61e6e8af028fdce4a0cd15068044adc4

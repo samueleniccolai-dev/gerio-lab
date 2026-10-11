@@ -1,13 +1,15 @@
 ---
 giro: 003
 traguardo: T2
-fase: domanda
+fase: critica
 inizio: 2026-10-11T15:36:45Z
 ricerca: no
 accettazione:
 ripreso: no
 ---
 # Piano del giro 003 — verifica visiva: primo E2E con browser reale e screenshot
+
+## RISPOSTA (11/10): **A** — Playwright Java 1.63.0, scope `test`. Da Gerio: sì. Tempo umano: 2'.
 
 ## DOMANDA (porta a senso unico: dipendenza nuova)
 

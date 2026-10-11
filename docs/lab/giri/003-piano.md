@@ -1,10 +1,10 @@
 ---
 giro: 003
 traguardo: T2
-fase: finale
+fase: costruzione
 inizio: 2026-10-11T15:36:45Z
 ricerca: no
-accettazione:
+accettazione: 531633e
 ripreso: no
 ---
 # Piano del giro 003 — verifica visiva: primo E2E con browser reale e screenshot

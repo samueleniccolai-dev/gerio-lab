@@ -1,8 +1,8 @@
 # Statistiche — laboratorio (metodo v3) contro Gerio (metodo v2)
 
-> Generato da `scripts/metrics/statistiche.py` il 2026-10-11 17:46 UTC. Dati: `metrics/giri.csv`, `metrics/baseline-gerio.csv`. Definizioni e cautele: `docs/ESPERIMENTO.md`.
+> Generato da `scripts/metrics/statistiche.py` il 2026-10-11 18:00 UTC. Dati: `metrics/giri.csv`, `metrics/baseline-gerio.csv`. Definizioni e cautele: `docs/ESPERIMENTO.md`.
 >
-> T0 di Gerio: 2026-10-04 14:06 UTC · T0 del laboratorio: 2026-10-11T09:43:32Z · traguardi passati dal laboratorio: 1 su 8.
+> T0 di Gerio: 2026-10-04 14:06 UTC · T0 del laboratorio: 2026-10-11T09:43:32Z · traguardi passati dal laboratorio: 2 su 8.
 
 ## Traguardo per traguardo
 
@@ -12,7 +12,7 @@ decisione registrata più le domande bloccanti, nel laboratorio ratifiche più p
 | Traguardo | Ore dal T0 | Cicli ↔ giri | Minuti umani | Decisioni all'umano | Rilavorazioni | Minuti di CI | Righe in src/main |
 |---|---|---|---|---|---|---|---|
 | T1 Binari, parte 1: deploy automatico ✅ | 6,7 ↔ 5,8 | 1 ↔ 2 | 30 ↔ 0 | 6 ↔ 1 | 3 ↔ 0 | 6,9 ↔ 3,6 | 0 ↔ 0 |
-| T2 Binari, parte 2: verifica visiva | 19,4 ↔ — | 1 ↔ 1 | 25 ↔ 2 | 4 ↔ 1 | 0 ↔ 0 | 8,6 ↔ 0,2 | 0 ↔ 0 |
+| T2 Binari, parte 2: verifica visiva ✅ | 19,4 ↔ 8,2 | 1 ↔ 2 | 25 ↔ 2 | 4 ↔ 1 | 0 ↔ 0 | 8,6 ↔ 2,6 | 0 ↔ 0 |
 | T3 Catalogo + pagina prodotto, con dati finti da fioraia | 24,7 ↔ — | 1 ↔ 0 | 30 ↔ — | 8 ↔ — | 1 ↔ — | 12,7 ↔ — | 971 ↔ — |
 | T4 Carrello | 32,3 ↔ — | 1 ↔ 0 | 35 ↔ — | 11 ↔ — | 0 ↔ — | 14,8 ↔ — | 672 ↔ — |
 | T5 Checkout con Stripe Checkout in test + webhook idempotente | 73,2 ↔ — | 2 ↔ 0 | 25 ↔ — | 25 ↔ — | 0 ↔ — | 12,9 ↔ — | 2.237 ↔ — |
@@ -28,8 +28,8 @@ Gerio, cicli senza stima dei minuti umani nel rapporto: 6. I minuti umani dei lo
 
 | # | Ipotesi | Laboratorio | Gerio | Esito |
 |---|---|---|---|---|
-| H1 | minuti umani ≤ 50% di Gerio | 0 | 30 | in linea (0%) |
-| H2 | ≤ 5 decisioni all'umano per traguardo | 1,0 | 6,0 | in linea |
+| H1 | minuti umani ≤ 50% di Gerio | 2 | 55 | in linea (4%) |
+| H2 | ≤ 5 decisioni all'umano per traguardo | 1,0 | 5,0 | in linea |
 | H3 | difetti dopo il merge ≤ Gerio | 0 giri di correzione (`difetto_di`) | non misurato in Gerio | da valutare alla fine |
 | H4 | deriva < 10% delle righe di produzione | —% | 31,1% | dati insufficienti |
 | H5 | ore fino a T7 ≤ Gerio (secondaria) | — | 114,5 | dati insufficienti |
@@ -40,7 +40,8 @@ Gerio, cicli senza stima dei minuti umani nel rapporto: 6. I minuti umani dei lo
 |---|---|---|---|---|---|---|---|---|---|
 | 001 | T1 | mergiata | #2 | 26 | no | 0 | 4 | 2/3 | 0 |
 | 002 | T1 | mergiata | #3 | 7 | sì | 0 | 1 | 0/0 | 0 |
-| 003 | T2 | aperta | #5 | 129 | — | 0 | 3 | 3/3 | 2 |
+| 003 | T2 | mergiata | #5 | 129 | no | 0 | 3 | 3/3 | 2 |
+| 004 | T2 | aperta | #7 | 3 | — | 0 | 0 | 0/0 | 0 |
 
 Merge fuori catena (PR di un giro entrate in main senza i controlli né la revisione umana): 0.
 

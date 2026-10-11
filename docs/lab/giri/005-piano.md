@@ -1,7 +1,7 @@
 ---
 giro: 005
 traguardo: T3
-fase: critica
+fase: costruzione
 inizio: 2026-10-11T18:17:10Z
 ricerca: sì
 accettazione: 5a04cc7

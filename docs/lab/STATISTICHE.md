@@ -1,6 +1,6 @@
 # Statistiche — laboratorio (metodo v3) contro Gerio (metodo v2)
 
-> Generato da `scripts/metrics/statistiche.py` il 2026-10-11 18:00 UTC. Dati: `metrics/giri.csv`, `metrics/baseline-gerio.csv`. Definizioni e cautele: `docs/ESPERIMENTO.md`.
+> Generato da `scripts/metrics/statistiche.py` il 2026-10-11 18:39 UTC. Dati: `metrics/giri.csv`, `metrics/baseline-gerio.csv`. Definizioni e cautele: `docs/ESPERIMENTO.md`.
 >
 > T0 di Gerio: 2026-10-04 14:06 UTC · T0 del laboratorio: 2026-10-11T09:43:32Z · traguardi passati dal laboratorio: 2 su 8.
 
@@ -12,8 +12,8 @@ decisione registrata più le domande bloccanti, nel laboratorio ratifiche più p
 | Traguardo | Ore dal T0 | Cicli ↔ giri | Minuti umani | Decisioni all'umano | Rilavorazioni | Minuti di CI | Righe in src/main |
 |---|---|---|---|---|---|---|---|
 | T1 Binari, parte 1: deploy automatico ✅ | 6,7 ↔ 5,8 | 1 ↔ 2 | 30 ↔ 0 | 6 ↔ 1 | 3 ↔ 0 | 6,9 ↔ 3,6 | 0 ↔ 0 |
-| T2 Binari, parte 2: verifica visiva ✅ | 19,4 ↔ 8,2 | 1 ↔ 2 | 25 ↔ 2 | 4 ↔ 1 | 0 ↔ 0 | 8,6 ↔ 2,6 | 0 ↔ 0 |
-| T3 Catalogo + pagina prodotto, con dati finti da fioraia | 24,7 ↔ — | 1 ↔ 0 | 30 ↔ — | 8 ↔ — | 1 ↔ — | 12,7 ↔ — | 971 ↔ — |
+| T2 Binari, parte 2: verifica visiva ✅ | 19,4 ↔ 8,5 | 1 ↔ 2 | 25 ↔ 2 | 4 ↔ 1 | 0 ↔ 0 | 8,6 ↔ 4,5 | 0 ↔ 0 |
+| T3 Catalogo + pagina prodotto, con dati finti da fioraia | 24,7 ↔ — | 1 ↔ 1 | 30 ↔ 0 | 8 ↔ 2 | 1 ↔ 0 | 12,7 ↔ 0,6 | 971 ↔ 581 |
 | T4 Carrello | 32,3 ↔ — | 1 ↔ 0 | 35 ↔ — | 11 ↔ — | 0 ↔ — | 14,8 ↔ — | 672 ↔ — |
 | T5 Checkout con Stripe Checkout in test + webhook idempotente | 73,2 ↔ — | 2 ↔ 0 | 25 ↔ — | 25 ↔ — | 0 ↔ — | 12,9 ↔ — | 2.237 ↔ — |
 | T6 Email di conferma + pagina stato ordine | 102,3 ↔ — | 2 ↔ 0 | 40 ↔ — | 19 ↔ — | 1 ↔ — | 31,1 ↔ — | 1.201 ↔ — |
@@ -41,7 +41,8 @@ Gerio, cicli senza stima dei minuti umani nel rapporto: 6. I minuti umani dei lo
 | 001 | T1 | mergiata | #2 | 26 | no | 0 | 4 | 2/3 | 0 |
 | 002 | T1 | mergiata | #3 | 7 | sì | 0 | 1 | 0/0 | 0 |
 | 003 | T2 | mergiata | #5 | 129 | no | 0 | 3 | 3/3 | 2 |
-| 004 | T2 | aperta | #7 | 3 | — | 0 | 0 | 0/0 | 0 |
+| 004 | T2 | mergiata | #7 | 3 | no | 0 | 0 | 0/0 | 0 |
+| 005 | T3 | aperta | #8 | 21 | — | 0 | 2 | 3/3 | 0 |
 
 Merge fuori catena (PR di un giro entrate in main senza i controlli né la revisione umana): 0.
 

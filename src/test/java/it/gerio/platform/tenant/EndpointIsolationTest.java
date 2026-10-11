@@ -47,7 +47,7 @@ class EndpointIsolationTest {
     as("fioraia-a.localhost").get("/probe-items/" + a1).then().statusCode(200).body(equalTo("a-1"));
     as("fioraia-b.localhost").get("/probe-items/" + b1).then().statusCode(200).body(equalTo("b-1"));
 
-    as("fioraia-a.localhost").body("a-nuovo").put("/probe-items/" + a1).then().statusCode(200);
+    form("fioraia-a.localhost", "a-nuovo").post("/probe-items/" + a1).then().statusCode(200);
     assertEquals(SHOP_A + "/a-nuovo", shops.probeRow(a1));
   }
 
@@ -58,7 +58,7 @@ class EndpointIsolationTest {
 
   @Test
   void aCannotChangeBEvenWithTheIdOfBInTheUrl() throws SQLException {
-    as("fioraia-a.localhost").body("rubato").put("/probe-items/" + b1).then().statusCode(404);
+    form("fioraia-a.localhost", "rubato").post("/probe-items/" + b1).then().statusCode(404);
 
     assertEquals(SHOP_B + "/b-1", shops.probeRow(b1));
   }
@@ -67,6 +67,19 @@ class EndpointIsolationTest {
   @Test
   void thePlatformDomainSeesNoShopRow() {
     as("localhost").get("/probe-items/" + a1).then().statusCode(404);
+  }
+
+  // Form POSTs are CSRF-protected (giro 008): same value in cookie and field, 16 bytes base64url.
+  private static RequestSpecification form(String host, String name) {
+    return given()
+        .redirects()
+        .follow(false)
+        .header("Host", host)
+        .cookie("csrf-token", "dGVzdC10b2tlbi0wMDAwMA")
+        .formParam("csrf-token", "dGVzdC10b2tlbi0wMDAwMA")
+        .formParam("name", name)
+        .contentType("application/x-www-form-urlencoded")
+        .when();
   }
 
   private static RequestSpecification as(String host) {

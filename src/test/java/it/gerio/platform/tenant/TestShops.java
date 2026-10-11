@@ -86,6 +86,9 @@ public final class TestShops {
     try (Connection connection = dataSource.getConnection();
         Statement statement = connection.createStatement()) {
       statement.execute("delete from probe_item");
+      statement.execute("delete from product_variant");
+      statement.execute("delete from product");
+      statement.execute("delete from category");
       statement.execute("delete from tenant_domain");
       statement.execute("delete from tenant");
     }

@@ -1,0 +1,16 @@
+{#include storefront/layout}
+  {#title}Catalogo · {shopName}{/title}
+  {#body}
+    <h1>Catalogo</h1>
+    {#for category in categories}
+    <section>
+      <h2><a href="/catalogo/{category.slug}">{category.name}</a></h2>
+      <ul>
+        {#for product in category.products}
+        <li><a href="/prodotti/{product.slug}">{product.name}</a> <span>{product.fromPrice}</span></li>
+        {/for}
+      </ul>
+    </section>
+    {/for}
+  {/body}
+{/include}

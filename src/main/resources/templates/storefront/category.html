@@ -1,0 +1,11 @@
+{#include storefront/layout}
+  {#title}{category.name} · {shopName}{/title}
+  {#body}
+    <h1>{category.name}</h1>
+    <ul>
+      {#for product in category.products}
+      <li><a href="/prodotti/{product.slug}">{product.name}</a> <span>{product.fromPrice}</span></li>
+      {/for}
+    </ul>
+  {/body}
+{/include}

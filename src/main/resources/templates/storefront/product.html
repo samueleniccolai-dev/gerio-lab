@@ -1,0 +1,21 @@
+{#include storefront/layout}
+  {#title}{product.name} · {shopName}{/title}
+  {#body}
+    <h1>{product.name}</h1>
+    {#if product.description}<p>{product.description}</p>{/if}
+    <ul>
+      {#for variant in product.variants}
+      <li><span>{variant.name}</span> <span>{variant.price}</span></li>
+      {/for}
+    </ul>
+    <p>IVA inclusa</p>
+    {#if product.preparation}<p>{product.preparation}</p>{/if}
+    {#if product.seasonalComposition}
+    <p>Composizione realizzata con fiori di stagione: può differire dalla foto mantenendo stile e valore.</p>
+    {/if}
+    {#if product.withdrawalExcluded}
+    <p>Fiori e piante sono deperibili: il diritto di recesso è escluso.</p>
+    {/if}
+    <p><a href="/catalogo/{product.categorySlug}">Torna alla categoria</a></p>
+  {/body}
+{/include}

@@ -1,7 +1,7 @@
 ---
 giro: 002
 traguardo: T1
-fase: critica
+fase: pronto
 inizio: 2026-10-11T15:25:50Z
 ricerca: no
 accettazione:
@@ -34,9 +34,14 @@ Conclusione: i criteri di T1 sono soddisfatti. Resta solo la parte documentale.
 - [ ] `curl -sI http://gerio-lab.samueleniccolai.com/ | head -1` → `308`
 - [ ] `curl -s -o /dev/null -w '%{http_code}' https://gerio-lab.samueleniccolai.com/q/health/ready` → `404`
 - [ ] `docs/runbook.md` §1: «**Ultima prova:**» con data 2026-10-11, run 38151028698, esito ok, tentativo 5 dello smoke
-- [ ] `docs/runbook.md` §0: «**Ultima prova:**» con data 2026-10-11 (il setup del server ha funzionato, prova indiretta dal deploy)
-- [ ] `docs/verifiche.md`: nuova riga del 2026-10-11 che aggiorna la riga «non verificato» di `up --wait`, `@sha256:`, `--remove-orphans`, `caddy reload` → `confermato (prova)`, fonte run 38151028698 (la riga vecchia resta: il registro si aggiunge, non si riscrive)
-- [ ] `python3 -c "import json;t=json.load(open('docs/lab/traguardi.json'))['traguardi'][0];print(t['stato'],t['passato_il'],t['giri'])"` → `passato 2026-10-11T15:2…Z ['001','002']` (`passato_il` = fine del job `deploy`, preso dal run; cambiano solo `stato`, `giri`, `pr`, `passato_il`)
+- [ ] `docs/runbook.md` §0: «**Ultima prova:** 2026-10-11, prova indiretta (il deploy del run 38151028698 è riuscito, quindi il setup del server funziona)» — le parole «prova indiretta» compaiono nella riga
+- [ ] `docs/verifiche.md`: righe nuove del 2026-10-11, fonte run 38151028698, separate per esito (la riga vecchia «non verificato» resta: il registro si aggiunge, non si riscrive):
+  - `@sha256:` (pull per digest) e `docker compose up --wait` → `confermato (prova)`;
+  - `--remove-orphans` e `caddy reload` → `accettati senza errore; effetto non osservato`.
+- [ ] `python3 -c "import json;t=json.load(open('docs/lab/traguardi.json'))['traguardi'][0];print(t['stato'],t['passato_il'],t['giri'],t['pr'])"` → `passato 2026-10-11T15:2…Z ['001', '002'] [2, 3]`
+  - `pr`: `[2, 3]` (PR #2 del giro 001, PR #3 già aperta, quella del lucchetto di questo giro).
+  - `passato_il`: istante di **fine del passo/job in cui compare `smoke ok`** (job 114504528632, `completedAt` letto con `gh run view 38151028698 --json jobs`), in UTC con `Z`; non l'ora del merge né quella di chiusura del giro.
+  - Cambiano solo `stato`, `giri`, `pr`, `passato_il`.
 - [ ] `./mvnw -B -ntp verify` → verde (nessun codice toccato, controllo di non regressione)
 - [ ] `python3 -I scripts/guard/pr_guard.py --base origin/main --head HEAD` → ok
 
@@ -65,7 +70,7 @@ Nessuno: solo documenti. `traguardi.json` può essere controllato da `consegna`:
 quattro campi ammessi.
 
 ## Budget
-Righe di produzione 0; file ≤ 4 (`runbook.md`, `verifiche.md`, `traguardi.json`, poi PROGRESS e rapporto in chiusura).
+Righe di produzione 0; file ≤ 5 (`runbook.md`, `verifiche.md`, `traguardi.json`, `PROGRESS.md`, rapporto `002-rapporto.md`), oltre a questo piano.
 
 ## Domande per il ricercatore (al massimo 3)
 Nessuna (ricerca: no).
@@ -75,5 +80,17 @@ Nessuna (ricerca: no).
 - Ridurre il 503 dopo il deploy (`health_interval` di Caddy più corto) se lo smoke supera spesso il tentativo 5.
 - Rollback che ricrea `last-good` (DUBBIO 4).
 
+## Nota per il rapporto
+Indicare che lo smoke è passato al tentativo 5 dopo 4 tentativi a vuoto (~20 s), e l'avviso
+`ubuntu-latest` per l'umano.
+
 ## Critica ricevuta e cosa cambia
-(dopo il critico)
+| Punto | Esito | Cosa cambia |
+|---|---|---|
+| DA CORREGGERE 1: `pr` di T1 senza valore atteso | accolto | atteso `[2, 3]`; `t['pr']` aggiunto al controllo |
+| DA CORREGGERE 2: `passato_il` ambiguo | accolto | fine del passo/job dove compare `smoke ok`, letta dal run, scritta esplicita |
+| DA CORREGGERE 3: `verifiche.md` metteva tutto in «confermato» | accolto | `@sha256:` e `up --wait` confermati; `--remove-orphans` e `caddy reload` «accettati senza errore; effetto non osservato» |
+| Facoltativo: «prova indiretta» nel runbook §0 | accolto | richiesta nella riga «Ultima prova» |
+| Facoltativo: 4 tentativi a vuoto nel rapporto | accolto | sezione «Nota per il rapporto» |
+| Budget file 4 → 5 | accolto | budget corretto |
+| Test JUnit | confermato: nessuno | tutti i controlli sono comandi; nessun commit `test(acceptance)` |

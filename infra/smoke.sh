@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Black-box check of https://$LAB_BASE_DOMAIN from the runner.
+# Black-box check of https://$LAB_BASE_DOMAIN and the demo shop from the runner.
 # Exit: 0 ok, 1 check failed, 3 missing configuration.
 set -euo pipefail
 
@@ -10,18 +10,25 @@ fi
 attempts="${SMOKE_ATTEMPTS:-24}"
 delay="${SMOKE_DELAY:-5}"
 base="https://${LAB_BASE_DOMAIN}"
+demo="https://demo.${LAB_BASE_DOMAIN}"
 
 code() { curl -s -o /dev/null -m 10 -w '%{http_code}' "$@" || true; }
 
 check() {
-  local body headers
+  local body headers host
   body=$(curl -fsS -m 10 "$base/") || return 1
   case "$body" in *"Negozi locali online"*) ;; *) echo "landing text missing" >&2; return 1 ;; esac
-  headers=$(curl -sI -m 10 "$base/") || return 1
-  printf '%s' "$headers" | grep -qi '^strict-transport-security:' || { echo "HSTS missing" >&2; return 1; }
-  [ "$(code -I "http://${LAB_BASE_DOMAIN}/")" = "308" ] || { echo "http is not 308" >&2; return 1; }
-  [ "$(code "$base/q/health/ready")" = "404" ] || { echo "/q/health/ready is public" >&2; return 1; }
-  [ "$(code "$base/internal/tls/allowed")" = "404" ] || { echo "/internal is public" >&2; return 1; }
+  body=$(curl -fsS -m 10 "$demo/catalogo") || return 1
+  case "$body" in *"Fioreria Il Glicine"*) ;; *) echo "demo catalog: shop name missing" >&2; return 1 ;; esac
+  body=$(curl -fsS -m 10 "$demo/prodotti/rose-rosse") || return 1
+  case "$body" in *"Mazzo di rose rosse"*) ;; *) echo "demo product: name missing" >&2; return 1 ;; esac
+  for host in "$LAB_BASE_DOMAIN" "demo.${LAB_BASE_DOMAIN}"; do
+    headers=$(curl -sI -m 10 "https://${host}/") || return 1
+    printf '%s' "$headers" | grep -qi '^strict-transport-security:' || { echo "HSTS missing on $host" >&2; return 1; }
+    [ "$(code -I "http://${host}/")" = "308" ] || { echo "http is not 308 on $host" >&2; return 1; }
+    [ "$(code "https://${host}/q/health/ready")" = "404" ] || { echo "/q/health/ready is public on $host" >&2; return 1; }
+    [ "$(code "https://${host}/internal/tls/allowed")" = "404" ] || { echo "/internal is public on $host" >&2; return 1; }
+  done
 }
 
 for i in $(seq 1 "$attempts"); do

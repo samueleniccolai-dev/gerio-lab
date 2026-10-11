@@ -1,7 +1,7 @@
 ---
 giro: 008
 traguardo: T4
-fase: domanda (da: piano)
+fase: critica
 inizio: 2026-10-11T21:46:27Z
 ricerca: sì
 accettazione:
@@ -9,7 +9,9 @@ ripreso: no
 ---
 # Piano del giro 008 — Carrello del negozio demo, senza JavaScript
 
-## DOMANDA (porta a senso unico: dipendenza nuova)
+## RISPOSTA RICEVUTA: opzione A (`quarkus-rest-csrf`), 11/10, da Gerio: sì
+
+## DOMANDA (porta a senso unico: dipendenza nuova) — risolta
 
 **Contesto.** Il carrello porta i primi form `POST` della vetrina. SPEC §10.2 chiede «protezione
 CSRF su tutti i form (estensione CSRF di Quarkus)». Nel `pom.xml` l'estensione non c'è: aggiungerla

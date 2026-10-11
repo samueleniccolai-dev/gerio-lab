@@ -1,7 +1,7 @@
 ---
 giro: 008
 traguardo: T4
-fase: costruzione
+fase: revisione
 inizio: 2026-10-11T21:46:27Z
 ricerca: sì
 accettazione: 336b46d

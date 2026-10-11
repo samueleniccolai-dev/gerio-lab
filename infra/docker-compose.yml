@@ -1,0 +1,65 @@
+name: gerio-lab
+
+services:
+  caddy:
+    image: caddy:2.11.7
+    restart: unless-stopped
+    ports:
+      - "80:80"
+      - "443:443"
+      - "443:443/udp"
+    environment:
+      LAB_BASE_DOMAIN: ${LAB_BASE_DOMAIN:?set LAB_BASE_DOMAIN}
+    volumes:
+      - ./Caddyfile:/etc/caddy/Caddyfile:ro
+      - caddy_data:/data
+      - caddy_config:/config
+    depends_on:
+      - app
+    networks: [lab]
+
+  app:
+    image: ${APP_IMAGE:?set APP_IMAGE}
+    restart: unless-stopped
+    environment:
+      PLATFORM_BASE_DOMAIN: ${PLATFORM_BASE_DOMAIN:?set PLATFORM_BASE_DOMAIN}
+      QUARKUS_DATASOURCE_JDBC_URL: jdbc:postgresql://db:5432/platform
+      QUARKUS_DATASOURCE_USERNAME: platform
+      QUARKUS_DATASOURCE_PASSWORD: ${DB_PASSWORD:?set DB_PASSWORD}
+    healthcheck:
+      test: ["CMD", "curl", "-fsS", "http://localhost:8080/q/health/ready"]
+      interval: 10s
+      timeout: 5s
+      retries: 12
+      start_period: 40s
+    depends_on:
+      db:
+        condition: service_healthy
+    networks: [lab]
+
+  db:
+    image: postgres:17.11
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: platform
+      POSTGRES_USER: platform
+      POSTGRES_PASSWORD: ${DB_PASSWORD:?set DB_PASSWORD}
+    volumes:
+      - pgdata:/var/lib/postgresql/data # PostgreSQL 18 changes the recommended path
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U $${POSTGRES_USER} -d $${POSTGRES_DB}"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+    networks: [lab]
+
+networks:
+  lab:
+    ipam:
+      config:
+        - subnet: 172.30.0.0/24
+
+volumes:
+  caddy_data:
+  caddy_config:
+  pgdata:

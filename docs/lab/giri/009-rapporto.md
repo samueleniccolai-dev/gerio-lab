@@ -12,13 +12,13 @@ ricerca_fonti: 0
 critico_da_correggere: 2
 critico_accolti: 2
 revisore_bloccanti: 0
-revisore_dubbi: 0
+revisore_dubbi: 1
 dubbi_corretti: 0
 fuori_perimetro: 0
 mutazioni_provate: 0
 mutazioni_prese: 0
 verify_rossi_locali: 0
-test_totali: 251
+test_totali: 247
 test_delta: 0
 decisioni_registro: 0
 decisioni_ratifica: 0
@@ -66,3 +66,8 @@ Il cookie `csrf-token` ha `Secure; HttpOnly`. Il cookie `cart` non è stato ispe
 
 ## Commit
 Solo documenti: piano, rapporto, `traguardi.json`, PROGRESS, metriche.
+
+## Verdetto del revisore
+- **BLOCCANTI:** nessuno. **MUTAZIONI:** 0 (nessun codice).
+- **DUBBI:** 1 — il rapporto riporta una tabella riassuntiva con un solo orario (06:42Z), non l'output di ogni comando. Lasciato così.
+- Build locale del revisore: 247 test, 2 errori per Chromium mancante nella sandbox (la CI li esegue); `Giro006` rosso solo al primo giro per immagine Caddy non ancora scaricata. Worktree `/tmp/revisione-009` rimosso.

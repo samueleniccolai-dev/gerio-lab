@@ -1,6 +1,6 @@
 # Statistiche — laboratorio (metodo v3) contro Gerio (metodo v2)
 
-> Generato da `scripts/metrics/statistiche.py` il 2026-10-12 06:44 UTC. Dati: `metrics/giri.csv`, `metrics/baseline-gerio.csv`. Definizioni e cautele: `docs/ESPERIMENTO.md`.
+> Generato da `scripts/metrics/statistiche.py` il 2026-10-12 06:48 UTC. Dati: `metrics/giri.csv`, `metrics/baseline-gerio.csv`. Definizioni e cautele: `docs/ESPERIMENTO.md`.
 >
 > T0 di Gerio: 2026-10-04 14:06 UTC · T0 del laboratorio: 2026-10-11T09:43:32Z · traguardi passati dal laboratorio: 4 su 8.
 
@@ -46,7 +46,7 @@ Gerio, cicli senza stima dei minuti umani nel rapporto: 6. I minuti umani dei lo
 | 006 | T3 | mergiata | #9 | 18 | no | 0 | 1 | 3/3 | 0 |
 | 007 | T3 | mergiata | #10 | 7 | sì | 0 | 2 | 0/0 | 0 |
 | 008 | T4 | mergiata | #11 | 27 | no | 0 | 3 | 4/4 | 2 |
-| 009 | T4 | aperta | #12 | 6 | — | 0 | 0 | 0/0 | 0 |
+| 009 | T4 | aperta | #12 | 6 | — | 0 | 1 | 0/0 | 0 |
 
 Merge fuori catena (PR di un giro entrate in main senza i controlli né la revisione umana): 1 (008).
 

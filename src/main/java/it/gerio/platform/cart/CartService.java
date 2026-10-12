@@ -53,6 +53,21 @@ public class CartService {
     }
   }
 
+  /**
+   * What an order is made of: the cart row ids are gone, prices are the catalog's right now. Only
+   * what can still be sold is in {@code lines}.
+   */
+  public record Snapshot(long cartId, List<SnapshotLine> lines) {}
+
+  public record SnapshotLine(
+      long variantId,
+      String productName,
+      String variantName,
+      long unitCents,
+      int quantity,
+      int vatRateBp,
+      int leadTimeDays) {}
+
   public enum Outcome {
     DONE,
     NOT_FOUND,
@@ -91,6 +106,39 @@ public class CartService {
                 })
             .toList();
     return new CartView(lines, lines.stream().mapToLong(Line::subtotalCents).sum());
+  }
+
+  /**
+   * The cart with this token, locked until the end of the transaction so that two checkouts of the
+   * same cart queue up (DECISIONI n. 16), with catalog prices. Empty if there is no such cart in
+   * this shop or nothing in it can be sold. Call it inside a transaction.
+   */
+  @Transactional
+  public Optional<Snapshot> lockedSnapshot(String token) {
+    Cart cart = find(token, true);
+    if (cart == null) {
+      return Optional.empty();
+    }
+    List<CartItem> items = CartItem.list("cartId = ?1 order by id", cart.getId());
+    Map<Long, SellableVariant> variants =
+        catalog.sellableVariants(items.stream().map(item -> item.variantId).toList());
+    List<SnapshotLine> lines =
+        items.stream()
+            .filter(item -> variants.containsKey(item.variantId))
+            .map(
+                item -> {
+                  SellableVariant v = variants.get(item.variantId);
+                  return new SnapshotLine(
+                      item.variantId,
+                      v.productName(),
+                      v.variantName(),
+                      v.priceCents(),
+                      item.quantity,
+                      v.vatRateBp(),
+                      v.leadTimeDays());
+                })
+            .toList();
+    return lines.isEmpty() ? Optional.empty() : Optional.of(new Snapshot(cart.getId(), lines));
   }
 
   /** Adds {@code quantity} (1..20) of a variant; the total per variant stops at 20. */

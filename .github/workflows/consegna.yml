@@ -305,6 +305,9 @@ jobs:
           IMAGE: ${{ needs.immagine.outputs.image }}
           GHCR_TOKEN: ${{ github.token }}
           GHCR_USER: ${{ github.actor }}
+          STRIPE_SECRET_KEY: ${{ secrets.STRIPE_SECRET_KEY }}
+          STRIPE_CONNECT_WEBHOOK_SECRET: ${{ secrets.STRIPE_CONNECT_WEBHOOK_SECRET }}
+          DEMO_STRIPE_ACCOUNT_ID: ${{ vars.DEMO_STRIPE_ACCOUNT_ID }}
         run: |
           if [ ! -x infra/deploy.sh ]; then
             echo "esito=saltato" >> "$GITHUB_OUTPUT"

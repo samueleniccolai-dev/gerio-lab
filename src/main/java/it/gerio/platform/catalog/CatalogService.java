@@ -24,9 +24,18 @@ public class CatalogService {
 
   public record VariantView(long id, String name, String price) {}
 
-  /** A variant that can be bought now, with the current price in cents (VAT included). */
+  /**
+   * A variant that can be bought now, with the current price in cents (VAT included), the VAT rate
+   * in basis points and the days of preparation the product needs.
+   */
   public record SellableVariant(
-      long id, String productName, String productSlug, String variantName, long priceCents) {}
+      long id,
+      String productName,
+      String productSlug,
+      String variantName,
+      long priceCents,
+      int vatRateBp,
+      int leadTimeDays) {}
 
   /** The product page: variants are the active ones, in order. */
   public record ProductView(
@@ -103,7 +112,13 @@ public class CatalogService {
       found.put(
           variant.getId(),
           new SellableVariant(
-              variant.getId(), product.name, product.slug, variant.name, variant.priceCents));
+              variant.getId(),
+              product.name,
+              product.slug,
+              variant.name,
+              variant.priceCents,
+              product.vatRateBp,
+              product.leadTimeDays));
     }
     return found;
   }

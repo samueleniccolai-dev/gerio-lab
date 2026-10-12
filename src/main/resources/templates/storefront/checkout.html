@@ -1,0 +1,55 @@
+{#include storefront/layout}
+  {#title}Riepilogo ordine · {shopName}{/title}
+  {#body}
+    <h1>Riepilogo ordine</h1>
+    {#if error}
+    <p role="alert">{error}</p>
+    {/if}
+    <ul>
+      {#for line in page.cart.lines}
+      <li>
+        <span>{line.productName}</span>
+        <span>{line.variantName}</span>
+        <span>{line.quantity} × {line.unitPrice}</span>
+        <span>{line.subtotal}</span>
+      </li>
+      {/for}
+    </ul>
+    <p>Totale: <strong>{page.cart.total}</strong></p>
+    <p>IVA inclusa. Ritiro in negozio, nessun costo di consegna.</p>
+    {#if page.canPay}
+    <form method="post" action="/checkout">
+      <input type="hidden" name="{inject:csrf.parameterName}" value="{inject:csrf.token}">
+      <p>
+        <label for="customerName">Nome e cognome</label>
+        <input id="customerName" type="text" name="customerName" value="{form.name}" required maxlength="200">
+        {#if errors.containsKey('customerName')}<span role="alert">{errors.get('customerName')}</span>{/if}
+      </p>
+      <p>
+        <label for="customerEmail">Email</label>
+        <input id="customerEmail" type="email" name="customerEmail" value="{form.email}" required maxlength="200">
+        {#if errors.containsKey('customerEmail')}<span role="alert">{errors.get('customerEmail')}</span>{/if}
+      </p>
+      <p>
+        <label for="customerPhone">Telefono (facoltativo)</label>
+        <input id="customerPhone" type="tel" name="customerPhone" value="{form.phone}" maxlength="40">
+        {#if errors.containsKey('customerPhone')}<span role="alert">{errors.get('customerPhone')}</span>{/if}
+      </p>
+      <p>
+        <label for="pickupDate">Giorno di ritiro</label>
+        <input id="pickupDate" type="date" name="pickupDate" value="{form.pickupDate}" min="{page.minPickupDate}" required>
+        {#if errors.containsKey('pickupDate')}<span role="alert">{errors.get('pickupDate')}</span>{/if}
+      </p>
+      <p>Procedendo accetti le <a href="/condizioni-di-vendita">condizioni di vendita</a>.</p>
+      <button type="submit">Ordina e paga</button>
+    </form>
+    {#else}
+    <p>Al momento non è possibile pagare online. Contatta il negozio per ordinare.</p>
+    <p>
+      {#if page.phone}Telefono: {page.phone}{/if}
+      {#if page.email}<br>Email: {page.email}{/if}
+    </p>
+    {/if}
+    <p><a href="/carrello">Torna al carrello</a></p>
+  {/body}
+{/include}

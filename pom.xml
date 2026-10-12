@@ -72,6 +72,13 @@
             <artifactId>rest-assured</artifactId>
             <scope>test</scope>
         </dependency>
+        <!-- Giro 010 (T5): Stripe Checkout sessions and webhook signatures, SPEC 8.3.
+             Approved by a human (DECISIONI n. 21). -->
+        <dependency>
+            <groupId>com.stripe</groupId>
+            <artifactId>stripe-java</artifactId>
+            <version>34.0.0</version>
+        </dependency>
         <!-- Giro 003 (T2): real-browser E2E and screenshots, SPEC §14. Approved by a human. -->
         <dependency>
             <groupId>com.microsoft.playwright</groupId>

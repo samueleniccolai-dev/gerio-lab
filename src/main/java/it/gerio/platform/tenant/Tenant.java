@@ -20,9 +20,8 @@ import java.util.UUID;
  * <p>The id is a UUID in text form, the declared exception to {@code EntityBase} (ADR-0003): the
  * Quarkus {@code TenantResolver} returns a String.
  *
- * <p>Only the columns used so far are mapped. The others (legal data, Stripe, {@code theme} and
- * {@code settings} as jsonb) keep their database defaults and get mapped with the feature that
- * needs them.
+ * <p>Only the columns used so far are mapped. The others (legal data, {@code theme} and {@code
+ * settings} as jsonb) keep their database defaults and get mapped with the feature that needs them.
  */
 @Entity
 @Table(name = "tenant")
@@ -48,6 +47,14 @@ public class Tenant extends AuditedEntity {
 
   @Column(nullable = false)
   public String timezone;
+
+  public String phone;
+
+  @Column(name = "stripe_account_id")
+  public String stripeAccountId;
+
+  @Column(name = "stripe_charges_enabled", nullable = false)
+  public boolean stripeChargesEnabled;
 
   // For JPA only.
   protected Tenant() {}

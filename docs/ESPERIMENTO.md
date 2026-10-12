@@ -108,3 +108,4 @@ Solo bug del meccanismo, non migliorie. Ogni correzione è una PR umana e una ri
 
 | Data | Cosa | Perché |
 |---|---|---|
+| 2026-10-12 | Versione di Playwright in una proprietà del pom, letta dall'hook di avvio delle sessioni cloud | Senza, l'hook saltava Chromium: 2 test Playwright rossi nel verify locale di ogni giro dal 006 |

@@ -172,6 +172,16 @@ public class CartService {
     return new Result(Outcome.DONE, cart.token);
   }
 
+  /**
+   * Empties a cart after its order was paid. Does not lock the cart: a checkout of the same cart
+   * locks the cart first and then the order, so the webhook, which holds the order, must never wait
+   * for the cart.
+   */
+  @Transactional
+  public void deleteItems(long cartId) {
+    CartItem.delete("cartId", cartId);
+  }
+
   /** Sets the quantity of a row (0..20); 0 removes it. */
   @Transactional
   public Result setQuantity(String token, long itemId, String quantity) {

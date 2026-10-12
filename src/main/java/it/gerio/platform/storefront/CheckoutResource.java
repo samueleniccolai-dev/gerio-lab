@@ -12,6 +12,7 @@ import it.gerio.platform.tenant.CurrentTenant;
 import it.gerio.platform.tenant.PlatformDomain;
 import it.gerio.platform.tenant.TenantContext;
 import jakarta.inject.Inject;
+import jakarta.ws.rs.Consumes;
 import jakarta.ws.rs.CookieParam;
 import jakarta.ws.rs.FormParam;
 import jakarta.ws.rs.GET;
@@ -62,6 +63,7 @@ public class CheckoutResource {
   }
 
   @POST
+  @Consumes(MediaType.APPLICATION_FORM_URLENCODED)
   public Response order(
       @CookieParam(CartResource.COOKIE) String token,
       @Context UriInfo uriInfo,

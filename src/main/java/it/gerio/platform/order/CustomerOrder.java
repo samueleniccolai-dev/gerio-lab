@@ -82,4 +82,10 @@ public class CustomerOrder extends TenantScopedEntity {
 
   @Column(name = "stripe_checkout_session_id")
   public String stripeCheckoutSessionId;
+
+  @Column(name = "stripe_payment_intent_id")
+  public String stripePaymentIntentId;
+
+  @Column(name = "paid_at")
+  public Instant paidAt;
 }

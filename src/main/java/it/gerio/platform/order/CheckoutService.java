@@ -305,16 +305,29 @@ public class CheckoutService {
   // --- transaction B --------------------------------------------------------------------------
 
   private void saveSession(Attempt attempt, StripeCheckout.Session session) {
-    CustomerOrder order = lockedOrder(attempt.orderId());
-    if (order != null && order.checkoutAttempt == attempt.number()) {
+    applySession(lockedOrder(attempt.orderId()), attempt.number(), session);
+  }
+
+  private void markFailed(Attempt attempt) {
+    applyFailure(lockedOrder(attempt.orderId()), attempt.number());
+  }
+
+  // A webhook may have paid or expired the order while Stripe was answering: only an order still
+  // waiting for payment takes the session of the attempt.
+  static void applySession(CustomerOrder order, int attempt, StripeCheckout.Session session) {
+    if (order != null
+        && order.status == OrderStatus.PENDING_PAYMENT
+        && order.checkoutAttempt == attempt) {
       order.stripeCheckoutSessionId = session.id();
       order.checkoutUrl = session.url();
     }
   }
 
-  private void markFailed(Attempt attempt) {
-    CustomerOrder order = lockedOrder(attempt.orderId());
-    if (order != null && order.checkoutAttempt == attempt.number() && order.checkoutUrl == null) {
+  static void applyFailure(CustomerOrder order, int attempt) {
+    if (order != null
+        && order.status == OrderStatus.PENDING_PAYMENT
+        && order.checkoutAttempt == attempt
+        && order.checkoutUrl == null) {
       order.checkoutExpiresAt = null;
     }
   }

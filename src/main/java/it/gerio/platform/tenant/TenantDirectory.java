@@ -41,6 +41,23 @@ public class TenantDirectory {
                 .map(tenant -> resolve(session, tenant)));
   }
 
+  /**
+   * The shop connected to this Stripe account, whatever its state (a suspended shop was still
+   * paid). Used by the webhook, which runs as the platform.
+   */
+  public Optional<ResolvedShop> findByStripeAccount(String accountId) {
+    if (accountId == null || accountId.isBlank()) {
+      return Optional.empty();
+    }
+    return withPlatformSession(
+        session ->
+            session
+                .createSelectionQuery("from Tenant where stripeAccountId = :account", Tenant.class)
+                .setParameter("account", accountId)
+                .uniqueResultOptional()
+                .map(tenant -> resolve(session, tenant)));
+  }
+
   /** {@code hostname} must already be normalized ({@link HostNormalizer}). */
   public Optional<ResolvedShop> findByHostname(String hostname) {
     if (platform.isPlatform(hostname) || platform.isUnderBase(hostname)) {

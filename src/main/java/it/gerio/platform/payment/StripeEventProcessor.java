@@ -55,7 +55,7 @@ public class StripeEventProcessor {
     eventLog.markProcessed(eventId);
   }
 
-  private void completed(String eventId, CustomerOrder order, SessionData session) {
+  void completed(String eventId, CustomerOrder order, SessionData session) {
     if (!"complete".equals(session.status()) || !"paid".equals(session.paymentStatus())) {
       LOG.infof("Event %s: order %d not paid (session not paid yet)", eventId, order.getId());
       return;
@@ -65,6 +65,10 @@ public class StripeEventProcessor {
       if (order.cartId != null) {
         cartService.deleteItems(order.cartId);
       }
+    } else if (order.status == OrderStatus.EXPIRED) {
+      LOG.warnf(
+          "Event %s: order %d already expired, but a real payment came (%s)",
+          eventId, order.getId(), session.paymentIntent());
     } else if (!wasPending
         && order.status == OrderStatus.PAID
         && !Objects.equals(order.stripePaymentIntentId, session.paymentIntent())) {

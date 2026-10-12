@@ -10,6 +10,7 @@ import it.gerio.platform.cart.CartService.Result;
 import it.gerio.platform.tenant.CurrentTenant;
 import it.gerio.platform.tenant.TenantContext;
 import jakarta.inject.Inject;
+import jakarta.ws.rs.Consumes;
 import jakarta.ws.rs.CookieParam;
 import jakarta.ws.rs.FormParam;
 import jakarta.ws.rs.GET;
@@ -60,6 +61,7 @@ public class CartResource {
   }
 
   @POST
+  @Consumes(MediaType.APPLICATION_FORM_URLENCODED)
   @Path("aggiungi")
   public Response add(
       @CookieParam(COOKIE) String token,
@@ -69,6 +71,7 @@ public class CartResource {
   }
 
   @POST
+  @Consumes(MediaType.APPLICATION_FORM_URLENCODED)
   @Path("righe/{itemId}")
   public Response update(
       @CookieParam(COOKIE) String token,
@@ -78,6 +81,7 @@ public class CartResource {
   }
 
   @POST
+  @Consumes(MediaType.APPLICATION_FORM_URLENCODED)
   @Path("righe/{itemId}/rimuovi")
   public Response remove(@CookieParam(COOKIE) String token, @PathParam("itemId") long itemId) {
     return change(() -> cartService.remove(token, itemId));

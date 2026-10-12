@@ -1,0 +1,25 @@
+{#include storefront/layout}
+  {#title}Esito del pagamento · {shopName}{/title}
+  {#body}
+    {#if outcome.paid}
+    <h1>Pagamento ricevuto</h1>
+    <p>Ordine {outcome.number}</p>
+    <p>Totale: <strong>{outcome.total}</strong></p>
+    <p>Riceverai un'email di conferma.</p>
+    {#else if outcome.expired}
+    <h1>Il pagamento non è stato completato</h1>
+    <p>Ordine {outcome.number}</p>
+    <p><a href="/carrello">Torna al carrello</a></p>
+    {#else}
+    {#if outcome.reloads}
+    <meta http-equiv="refresh" content="2;url=/ordine/esito?session_id={outcome.sessionId}&amp;n={outcome.nextReload}">
+    <h1>Stiamo confermando il pagamento…</h1>
+    {#else}
+    <h1>Stiamo confermando il pagamento</h1>
+    <p>Riceverai l'email di conferma appena il pagamento sarà confermato.</p>
+    {/if}
+    <p>Ordine {outcome.number}</p>
+    <p>Totale: <strong>{outcome.total}</strong></p>
+    {/if}
+  {/body}
+{/include}

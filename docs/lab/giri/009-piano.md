@@ -1,7 +1,7 @@
 ---
 giro: 009
 traguardo: T4
-fase: critica
+fase: revisione
 inizio: 2026-10-12T06:40:21Z
 ricerca: no
 accettazione: n/a
@@ -27,7 +27,7 @@ Eseguita con `curl` e un cookie jar, token CSRF preso dalla scheda prodotto.
 | 4 | orchidea a 2 | 303; totale 164,80 € |
 | 5 | rimuovi Medio | 303; totale 59,80 € |
 | 6 | orchidea a 0 | 303; carrello vuoto |
-| 7 | quantità 0, e POST senza token CSRF | 400 entrambi |
+| 7 | `POST /carrello/aggiungi` con `variantId=2`, `quantity=0`; poi senza token CSRF | 400 entrambi |
 
 ## Fatto quando — controlli eseguibili
 - [ ] `gh run view 38213443526 --json conclusion,headSha` → `success`, `4343195f…`; job `deploy` `success`
@@ -55,3 +55,9 @@ Righe di produzione = 0; file ≤ 5 (piano, rapporto, `traguardi.json`, `PROGRES
 
 ## Domande per il ricercatore
 Nessuna (`ricerca: no`).
+
+## Critica ricevuta e cosa cambia
+Accolto (2 da correggere, 1 facoltativo):
+1. Passo 7 precisato: `/carrello/aggiungi` con `quantity=0` (su `/righe/{id}` lo 0 toglie la riga o dà 404).
+2. Gli id delle varianti si leggono dagli `<input>` delle schede prodotto (bouquet-di-stagione: Medio = 2; orchidea-bianca: Vaso 12 cm = 8) e gli id riga da `GET /carrello`; il rapporto li riporta con POST 303 e totale letto dopo ogni passo.
+3. (facoltativo) cookie `cart` controllato con `curl -i`; il numero PR (12) è confermato da `pr.py stato`.

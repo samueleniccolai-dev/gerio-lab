@@ -143,9 +143,13 @@
         ],
         "completato": "2026-10-07T15:20:24Z"
       },
-      "stato": "da-fare",
-      "giri": [],
-      "pr": [],
+      "stato": "in-corso",
+      "giri": [
+        "010"
+      ],
+      "pr": [
+        13
+      ],
       "passato_il": null
     },
     {

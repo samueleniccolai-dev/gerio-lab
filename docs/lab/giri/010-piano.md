@@ -1,7 +1,7 @@
 ---
 giro: 010
 traguardo: T5
-fase: revisione
+fase: chiusura
 fonti_ricerca: 7
 inizio: 2026-10-12T06:53:38Z
 ricerca: sì

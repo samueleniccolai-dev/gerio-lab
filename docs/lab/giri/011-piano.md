@@ -1,7 +1,7 @@
 ---
 giro: 011
 traguardo: T5
-fase: costruzione
+fase: revisione
 inizio: 2026-10-12T09:37:41Z
 ricerca: sì
 accettazione: cb7b385

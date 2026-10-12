@@ -29,3 +29,4 @@ Stato: `—` (in vigore) · `contestata` · `cambiata (giro NNN)` · `risposta d
 | 18 | 11/10 | 008 | ratifica | Il filtro CSRF dà 400 a ogni POST/PUT non form senza token: il webhook Stripe di T5 richiede un'esclusione | disattivare `require-form-url-encoded` | da decidere in T5 [DA VERIFICARE] | — |
 | 19 | 11/10 | 008 | registro | `EndpointIsolationTest` e `ProbeItemResource` passano a POST form con token CSRF | disattivare CSRF in test | il test prova l'isolamento, non il CSRF | — |
 | 20 | 11/10 | 008 | registro | `CartService` restituisce un esito (DONE/NOT_FOUND/BAD_REQUEST), la risorsa lo traduce in 303/404/400 | eccezioni JAX-RS nel servizio | niente HTTP nel servizio | — |
+| 21 | 12/10 | 010 | senso unico | Dipendenza `com.stripe:stripe-java` 34.0.0 per Checkout e firma webhook (SPEC §8.3) | HTTP + HMAC a mano | risposta umana: «Procedi con Opzione A» (da Gerio: sì) | risposta del 12/10 |

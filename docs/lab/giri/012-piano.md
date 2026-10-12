@@ -111,6 +111,14 @@ ripassi davvero), `Giro012Log`, `Giro012LiveKeyRefused` (base astratta).
 | `Giro012DemoStripeAccountIsolationAcceptanceTest` | ordini con lo stesso numero in due negozi: l'evento dell'account del demo cambia solo l'ordine del demo |
 | `Giro012InfraAcceptanceTest` | compose, validazione di `DEMO_STRIPE_ACCOUNT_ID`, segreti fuori dal comando ssh, `IFS= read -r`, smoke sulla rotta webhook |
 
+**Accettazione corretta durante la costruzione (da guardare in revisione umana).** Il curl finto
+di `Giro006DemoHostAcceptanceTest` non conosceva `POST /webhooks/stripe/connect` e rispondeva
+«unexpected URL» alle chiamate che questo piano impone a `smoke.sh`
+(`Giro012InfraAcceptanceTest.smokeChecksTheWebhookRoute`). Con un commit `test(acceptance)` nuovo
+(nessuna storia riscritta) il finto ora risponde 400 sull'host base e 404 su `demo.<BASE>`, come il
+sito vero. Nessuna asserzione di Giro006 è cambiata; restano rossi per ambiente 2 test Giro006
+(immagine Caddy non scaricata) e 2 visuali (Chromium mancante).
+
 ## Porte
 - Doppio senso: proprietà `app.demo.stripe-account-id` (si toglie con una riga); rifiuto delle chiavi
   live (una riga); variabili opzionali in compose; formato stdin di `remote.sh`; check in `smoke.sh`.

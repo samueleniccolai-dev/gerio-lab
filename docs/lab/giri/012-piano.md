@@ -1,7 +1,7 @@
 ---
 giro: 012
 traguardo: T5
-fase: revisione
+fase: chiusura
 inizio: 2026-10-12T10:27:00Z
 ricerca: no
 accettazione: 898a6b2

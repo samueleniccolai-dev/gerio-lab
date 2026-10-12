@@ -1,6 +1,6 @@
 # Statistiche — laboratorio (metodo v3) contro Gerio (metodo v2)
 
-> Generato da `scripts/metrics/statistiche.py` il 2026-10-12 10:21 UTC. Dati: `metrics/giri.csv`, `metrics/baseline-gerio.csv`. Definizioni e cautele: `docs/ESPERIMENTO.md`.
+> Generato da `scripts/metrics/statistiche.py` il 2026-10-12 10:58 UTC. Dati: `metrics/giri.csv`, `metrics/baseline-gerio.csv`. Definizioni e cautele: `docs/ESPERIMENTO.md`.
 >
 > T0 di Gerio: 2026-10-04 14:06 UTC · T0 del laboratorio: 2026-10-11T09:43:32Z · traguardi passati dal laboratorio: 4 su 8.
 
@@ -15,7 +15,7 @@ decisione registrata più le domande bloccanti, nel laboratorio ratifiche più p
 | T2 Binari, parte 2: verifica visiva ✅ | 19,4 ↔ 8,5 | 1 ↔ 2 | 25 ↔ 2 | 4 ↔ 1 | 0 ↔ 0 | 8,6 ↔ 4,5 | 0 ↔ 0 |
 | T3 Catalogo + pagina prodotto, con dati finti da fioraia ✅ | 24,7 ↔ 12,0 | 1 ↔ 3 | 30 ↔ 0 | 8 ↔ 2 | 1 ↔ 0 | 12,7 ↔ 7,2 | 971 ↔ 581 |
 | T4 Carrello ✅ | 32,3 ↔ 21,1 | 1 ↔ 2 | 35 ↔ 2 | 11 ↔ 3 | 0 ↔ 0 | 14,8 ↔ 2,6 | 672 ↔ 470 |
-| T5 Checkout con Stripe Checkout in test + webhook idempotente | 73,2 ↔ — | 2 ↔ 2 | 25 ↔ 2 | 25 ↔ 5 | 0 ↔ 0 | 12,9 ↔ 3,4 | 2.237 ↔ 1.759 |
+| T5 Checkout con Stripe Checkout in test + webhook idempotente | 73,2 ↔ — | 2 ↔ 3 | 25 ↔ 2 | 25 ↔ 5 | 0 ↔ 0 | 12,9 ↔ 6,2 | 2.237 ↔ 1.794 |
 | T6 Email di conferma + pagina stato ordine | 102,3 ↔ — | 2 ↔ 0 | 40 ↔ — | 19 ↔ — | 1 ↔ — | 31,1 ↔ — | 1.201 ↔ — |
 | T7 Zone di consegna e orario limite, versione semplice | 114,5 ↔ — | 1 ↔ 0 | 20 ↔ — | 16 ↔ — | 1 ↔ — | 24,6 ↔ — | 1.100 ↔ — |
 | T8 Pagine legali minime + rifiniture demo | — ↔ — | 0 ↔ 0 | — ↔ — | — ↔ — | — ↔ — | — ↔ — | — ↔ — |
@@ -48,7 +48,8 @@ Gerio, cicli senza stima dei minuti umani nel rapporto: 6. I minuti umani dei lo
 | 008 | T4 | mergiata | #11 | 27 | no | 0 | 3 | 4/4 | 2 |
 | 009 | T4 | mergiata | #12 | 6 | sì | 0 | 1 | 0/0 | 0 |
 | 010 | T5 | mergiata | #13 | 38 | no | 0 | 4 | 3/4 | 2 |
-| 011 | T5 | aperta | #14 | 42 | — | 0 | 4 | 3/5 | 0 |
+| 011 | T5 | mergiata | #14 | 42 | sì | 0 | 4 | 3/5 | 0 |
+| 012 | T5 | aperta | #15 | 31 | — | 0 | 3 | 3/3 | 0 |
 
 Merge fuori catena (PR di un giro entrate in main senza i controlli né la revisione umana): 1 (008).
 

@@ -2,9 +2,10 @@ package it.gerio.platform.tenant;
 
 import jakarta.transaction.Transactional;
 import jakarta.ws.rs.Consumes;
+import jakarta.ws.rs.FormParam;
 import jakarta.ws.rs.GET;
 import jakarta.ws.rs.NotFoundException;
-import jakarta.ws.rs.PUT;
+import jakarta.ws.rs.POST;
 import jakarta.ws.rs.Path;
 import jakarta.ws.rs.PathParam;
 import jakarta.ws.rs.Produces;
@@ -24,10 +25,10 @@ public class ProbeItemResource {
     return find(id).name;
   }
 
-  @PUT
-  @Consumes(MediaType.TEXT_PLAIN)
+  @POST
+  @Consumes(MediaType.APPLICATION_FORM_URLENCODED)
   @Transactional
-  public String rename(@PathParam("id") long id, String name) {
+  public String rename(@PathParam("id") long id, @FormParam("name") String name) {
     ProbeItem item = find(id);
     item.name = name;
     return item.name;

@@ -23,3 +23,9 @@ Stato: `—` (in vigore) · `contestata` · `cambiata (giro NNN)` · `risposta d
 | 12 | 11/10 | 005 | registro | Visibilità (prodotto attivo, categoria visibile, ≥1 variante attiva) nel servizio; altrimenti 404 | logica nella risorsa | niente logica nelle risorse | — |
 | 13 | 11/10 | 005 | registro | `Prices.format` scritto a mano con U+00A0 | `NumberFormat` | l'uscita non dipende dai dati locale del JDK | — |
 | 14 | 11/10 | 006 | registro | Il Caddyfile serve due nomi espliciti (`base, demo.base`) in un solo blocco, senza on-demand TLS | on-demand TLS di App. B.3; snippet | un solo negozio pubblico; si toglie con un commit | — |
+| 15 | 11/10 | 008 | senso unico | Dipendenza `io.quarkus:quarkus-rest-csrf` (versione dal BOM) per i form della vetrina | nessuna dipendenza (Origin + SameSite); token fatto a mano | risposta umana: «Procedi con A» (da Gerio: sì) | risposta del 11/10 |
+| 16 | 11/10 | 008 | registro | `CartService.add` blocca il `Cart` con `PESSIMISTIC_WRITE`, niente SQL nativo | upsert `on conflict` | resta il filtro per negozio, `Clock`/audit e `version` (critica) | — |
+| 17 | 11/10 | 008 | ratifica | Token del carrello sempre generato dal server; token ignoto o di un altro negozio ignorato e cookie nuovo | adottare il token ricevuto | evita fixation e violazione di `unique` | — |
+| 18 | 11/10 | 008 | ratifica | Il filtro CSRF dà 400 a ogni POST/PUT non form senza token: il webhook Stripe di T5 richiede un'esclusione | disattivare `require-form-url-encoded` | da decidere in T5 [DA VERIFICARE] | — |
+| 19 | 11/10 | 008 | registro | `EndpointIsolationTest` e `ProbeItemResource` passano a POST form con token CSRF | disattivare CSRF in test | il test prova l'isolamento, non il CSRF | — |
+| 20 | 11/10 | 008 | registro | `CartService` restituisce un esito (DONE/NOT_FOUND/BAD_REQUEST), la risorsa lo traduce in 303/404/400 | eccezioni JAX-RS nel servizio | niente HTTP nel servizio | — |

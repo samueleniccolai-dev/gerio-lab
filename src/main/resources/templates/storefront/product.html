@@ -5,7 +5,14 @@
     {#if product.description}<p>{product.description}</p>{/if}
     <ul>
       {#for variant in product.variants}
-      <li><span>{variant.name}</span> <span>{variant.price}</span></li>
+      <li><span>{variant.name}</span> <span>{variant.price}</span>
+        <form method="post" action="/carrello/aggiungi">
+          <input type="hidden" name="{inject:csrf.parameterName}" value="{inject:csrf.token}">
+          <input type="hidden" name="variantId" value="{variant.id}">
+          <input type="hidden" name="quantity" value="1">
+          <button type="submit">Aggiungi al carrello</button>
+        </form>
+      </li>
       {/for}
     </ul>
     <p>IVA inclusa</p>

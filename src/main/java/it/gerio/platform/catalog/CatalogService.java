@@ -2,6 +2,8 @@ package it.gerio.platform.catalog;
 
 import jakarta.enterprise.context.ApplicationScoped;
 import java.util.ArrayList;
+import java.util.Collection;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -20,7 +22,11 @@ public class CatalogService {
 
   public record ProductSummary(String name, String slug, String fromPrice) {}
 
-  public record VariantView(String name, String price) {}
+  public record VariantView(long id, String name, String price) {}
+
+  /** A variant that can be bought now, with the current price in cents (VAT included). */
+  public record SellableVariant(
+      long id, String productName, String productSlug, String variantName, long priceCents) {}
 
   /** The product page: variants are the active ones, in order. */
   public record ProductView(
@@ -55,7 +61,10 @@ public class CatalogService {
     }
     List<VariantView> variants =
         activeVariants(product.getId()).stream()
-            .map(variant -> new VariantView(variant.name, Prices.format(variant.priceCents)))
+            .map(
+                variant ->
+                    new VariantView(
+                        variant.getId(), variant.name, Prices.format(variant.priceCents)))
             .toList();
     if (variants.isEmpty()) {
       return Optional.empty();
@@ -70,6 +79,37 @@ public class CatalogService {
             SEASONAL_CATEGORIES.contains(category.slug),
             product.withdrawalExcluded,
             preparation(product.leadTimeDays)));
+  }
+
+  /**
+   * The variants among {@code ids} that can be bought: active, of an active product in a visible
+   * category. Others (missing, of another shop, hidden) are simply absent.
+   */
+  public Map<Long, SellableVariant> sellableVariants(Collection<Long> ids) {
+    if (ids.isEmpty()) {
+      return Map.of();
+    }
+    Map<Long, SellableVariant> found = new LinkedHashMap<>();
+    for (ProductVariant variant :
+        ProductVariant.<ProductVariant>list("id in ?1 and active = true", ids)) {
+      Product product = Product.findById(variant.productId);
+      if (product == null || !product.active || product.categoryId == null) {
+        continue;
+      }
+      Category category = Category.findById(product.categoryId);
+      if (category == null || !category.visible) {
+        continue;
+      }
+      found.put(
+          variant.getId(),
+          new SellableVariant(
+              variant.getId(), product.name, product.slug, variant.name, variant.priceCents));
+    }
+    return found;
+  }
+
+  public Optional<SellableVariant> sellableVariant(long id) {
+    return Optional.ofNullable(sellableVariants(List.of(id)).get(id));
   }
 
   private static String preparation(int days) {

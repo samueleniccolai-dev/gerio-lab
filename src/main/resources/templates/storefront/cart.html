@@ -1,0 +1,33 @@
+{#include storefront/layout}
+  {#title}Carrello · {shopName}{/title}
+  {#body}
+    <h1>Carrello</h1>
+    {#if cart.lines.empty}
+    <p>Il tuo carrello è vuoto.</p>
+    <p><a href="/catalogo">Vai al catalogo</a></p>
+    {#else}
+    <ul>
+      {#for line in cart.lines}
+      <li>
+        <a href="/prodotti/{line.productSlug}">{line.productName}</a>
+        <span>{line.variantName}</span>
+        <span>{line.unitPrice}</span>
+        <form method="post" action="/carrello/righe/{line.itemId}">
+          <input type="hidden" name="{inject:csrf.parameterName}" value="{inject:csrf.token}">
+          <label for="quantity-{line.itemId}">Quantità</label>
+          <input id="quantity-{line.itemId}" type="number" name="quantity" min="0" max="20" value="{line.quantity}">
+          <button type="submit">Aggiorna</button>
+        </form>
+        <form method="post" action="/carrello/righe/{line.itemId}/rimuovi">
+          <input type="hidden" name="{inject:csrf.parameterName}" value="{inject:csrf.token}">
+          <button type="submit">Rimuovi</button>
+        </form>
+        <span>{line.subtotal}</span>
+      </li>
+      {/for}
+    </ul>
+    <p>Totale prodotti: <strong>{cart.total}</strong></p>
+    <p>IVA inclusa. Consegna calcolata al checkout.</p>
+    {/if}
+  {/body}
+{/include}

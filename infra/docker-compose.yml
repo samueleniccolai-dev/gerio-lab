@@ -26,6 +26,9 @@ services:
       QUARKUS_DATASOURCE_JDBC_URL: jdbc:postgresql://db:5432/platform
       QUARKUS_DATASOURCE_USERNAME: platform
       QUARKUS_DATASOURCE_PASSWORD: ${DB_PASSWORD:?set DB_PASSWORD}
+      STRIPE_SECRET_KEY: ${STRIPE_SECRET_KEY:-}
+      STRIPE_CONNECT_WEBHOOK_SECRET: ${STRIPE_CONNECT_WEBHOOK_SECRET:-}
+      DEMO_STRIPE_ACCOUNT_ID: ${DEMO_STRIPE_ACCOUNT_ID:-}
     healthcheck:
       test: ["CMD", "curl", "-fsS", "http://localhost:8080/q/health/ready"]
       interval: 10s

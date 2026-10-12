@@ -24,6 +24,8 @@ Variabili d'ambiente che `consegna` passa agli script (mai stamparle):
 | `LAB_BASE_DOMAIN` | dominio base del laboratorio, es. `gerio-lab.samueleniccolai.com` (variabile) |
 | `IMAGE` | lo stesso riferimento passato come argomento |
 | `GHCR_USER`, `GHCR_TOKEN` | credenziali del run, solo lettura dei pacchetti, scadono a fine job: servono al server per `docker login ghcr.io` e `docker pull` |
+| `STRIPE_SECRET_KEY`, `STRIPE_CONNECT_WEBHOOK_SECRET` | opzionali, segreti dell'environment `produzione`: chiave segreta (o limitata) **di test** di Stripe e segreto del webhook Connect. Viaggiano su stdin con il token GHCR (tre righe, vuota = assente) e finiscono nel `.env` del server (600). Una chiave live è rifiutata dall'app. |
+| `DEMO_STRIPE_ACCOUNT_ID` | opzionale, variabile: account collegato di prova del demo (`acct_` + lettere e cifre, altrimenti uscita 2). Non è un segreto: va come quinto argomento a `remote.sh` |
 
 Regole:
 - Tutto ciò che sta in `infra/` è un percorso protetto: le PR che lo toccano vanno sempre in

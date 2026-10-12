@@ -8,8 +8,10 @@ import java.io.InputStream;
 import java.io.UncheckedIOException;
 import java.nio.charset.StandardCharsets;
 import java.sql.Connection;
+import java.sql.PreparedStatement;
 import java.sql.SQLException;
 import java.sql.Statement;
+import java.util.Optional;
 import javax.sql.DataSource;
 import org.eclipse.microprofile.config.inject.ConfigProperty;
 import org.jboss.logging.Logger;
@@ -30,6 +32,9 @@ public class DemoSeed {
   @ConfigProperty(name = "app.demo.seed")
   boolean enabled;
 
+  @ConfigProperty(name = "app.demo.stripe-account-id")
+  Optional<String> stripeAccountId;
+
   @Startup
   void seed() {
     if (!enabled) {
@@ -43,6 +48,25 @@ public class DemoSeed {
       throw new IllegalStateException("Demo seed failed", e);
     }
     LOG.info("Demo shop seeded");
+    connectStripeAccount();
+  }
+
+  /** Separate statement: a unique conflict keeps the previous value and does not stop startup. */
+  private void connectStripeAccount() {
+    String account = stripeAccountId.map(String::trim).filter(a -> !a.isEmpty()).orElse(null);
+    if (account == null) {
+      return;
+    }
+    try (Connection connection = dataSource.getConnection();
+        PreparedStatement statement =
+            connection.prepareStatement(
+                "update tenant set stripe_account_id = ?, stripe_charges_enabled = true"
+                    + " where id = '00000000-0000-0000-0000-0000000de000'")) {
+      statement.setString(1, account);
+      statement.executeUpdate();
+    } catch (SQLException e) {
+      LOG.errorf("Stripe account %s not applied to the demo shop: %s", account, e.getSQLState());
+    }
   }
 
   private static String read() {

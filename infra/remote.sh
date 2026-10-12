@@ -1,6 +1,7 @@
 #!/usr/bin/env bash
 # Runs ON THE SERVER. Usage:
-#   remote.sh deploy <image@sha256:...> <lab-domain> <ghcr-user>   (GHCR token on stdin)
+#   remote.sh deploy <image@sha256:...> <lab-domain> <ghcr-user> [demo-account]
+#     stdin, one per line: GHCR token, Stripe secret key, Connect webhook secret (empty = unset)
 #   remote.sh rollback
 # Everything runs under one flock, rollback included.
 set -euo pipefail
@@ -35,7 +36,15 @@ start_and_verify() {
 }
 
 deploy() {
-  local image="$1" domain="$2" ghcr_user="$3"
+  local image="$1" domain="$2" ghcr_user="$3" demo_account="${4:-}"
+  local ghcr_token="" stripe_key="" webhook_secret=""
+  IFS= read -r ghcr_token || true
+  IFS= read -r stripe_key || true
+  IFS= read -r webhook_secret || true
+  if [ -n "$demo_account" ] && ! [[ "$demo_account" =~ ^acct_[A-Za-z0-9]+$ ]]; then
+    echo "invalid DEMO_STRIPE_ACCOUNT_ID" >&2
+    exit 2
+  fi
   umask 077
   if [ ! -f "$ROOT/.env" ]; then
     if docker volume inspect gerio-lab_pgdata > /dev/null 2>&1; then
@@ -58,6 +67,9 @@ deploy() {
   set_env APP_IMAGE "$image"
   set_env PLATFORM_BASE_DOMAIN "$domain"
   set_env LAB_BASE_DOMAIN "$domain"
+  [ -z "$stripe_key" ] || set_env STRIPE_SECRET_KEY "$stripe_key"
+  [ -z "$webhook_secret" ] || set_env STRIPE_CONNECT_WEBHOOK_SECRET "$webhook_secret"
+  [ -z "$demo_account" ] || set_env DEMO_STRIPE_ACCOUNT_ID "$demo_account"
   mv "$ROOT/incoming/docker-compose.yml" "$ROOT/docker-compose.yml"
   cat "$ROOT/incoming/Caddyfile" > "$ROOT/Caddyfile"
   rm -f "$ROOT/incoming/Caddyfile"
@@ -65,7 +77,7 @@ deploy() {
   cp "$ROOT/incoming/remote.sh" "$ROOT/remote.sh.new" && chmod 700 "$ROOT/remote.sh.new" && mv "$ROOT/remote.sh.new" "$ROOT/remote.sh"
 
   trap 'docker logout ghcr.io > /dev/null 2>&1 || true' EXIT
-  docker login ghcr.io -u "$ghcr_user" --password-stdin > /dev/null
+  printf '%s' "$ghcr_token" | docker login ghcr.io -u "$ghcr_user" --password-stdin > /dev/null
   "${COMPOSE[@]}" pull app
   start_and_verify "$image"
   touch "$ROOT/last-good"
@@ -85,8 +97,8 @@ rollback() {
 }
 
 case "${1:-}" in
-  deploy) [ "$#" -eq 4 ] || { echo "usage: remote.sh deploy <image> <domain> <user>" >&2; exit 2; }
-          deploy "$2" "$3" "$4" ;;
+  deploy) { [ "$#" -eq 4 ] || [ "$#" -eq 5 ]; } || { echo "usage: remote.sh deploy <image> <domain> <user> [demo-account]" >&2; exit 2; }
+          deploy "$2" "$3" "$4" "${5:-}" ;;
   rollback) rollback ;;
   *) echo "usage: remote.sh deploy|rollback" >&2; exit 2 ;;
 esac

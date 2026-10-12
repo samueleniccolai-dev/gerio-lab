@@ -34,3 +34,10 @@ Pin dell'api_version dell'endpoint a `Stripe.API_VERSION`; job di riconciliazion
 - [Checkout Session object] https://docs.stripe.com/api/checkout/sessions/object
 - [Webhook.java] https://raw.githubusercontent.com/stripe/stripe-java/master/src/main/java/com/stripe/net/Webhook.java
 - [EventDataObjectDeserializer.java] https://raw.githubusercontent.com/stripe/stripe-java/master/src/main/java/com/stripe/model/EventDataObjectDeserializer.java
+
+## Correzione (critica del giro 011)
+Il punto 2 e «Cosa prendiamo / Cosa evitiamo» sul CSRF sono errati per `quarkus-rest-csrf` 3.33.4:
+nel bytecode di `CsrfRequestResponseReactiveFilter`, con `require-form-url-encoded=true` un `POST`
+senza token e con tipo diverso da form o multipart (o senza `Content-Type`) è rifiutato con 400
+(«Request has the wrong media type»); solo con `false` la verifica si salta. Il webhook JSON
+prenderebbe 400. La scelta è nel piano (sezione CSRF): `false` più filtro 415 della vetrina.

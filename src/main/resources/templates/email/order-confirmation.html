@@ -1,0 +1,29 @@
+<!doctype html>
+<html lang="it">
+<body>
+  <p>Ciao {order.customerName},<br>grazie per il tuo ordine: il pagamento è andato a buon fine.</p>
+  <h1>Ordine {order.number}</h1>
+  <p>Data dell'ordine: {order.orderDate}</p>
+  <table>
+    <thead><tr><th>Articolo</th><th>Quantità</th><th>Prezzo</th><th>Totale</th></tr></thead>
+    <tbody>
+    {#for line in order.lines}
+      <tr><td>{line.name}</td><td>{line.quantity}</td><td>{line.unitPrice}</td><td>{line.lineTotal}</td></tr>
+    {/for}
+    </tbody>
+  </table>
+  <p>Totale (IVA inclusa): <strong>{order.total}</strong></p>
+  <p>Pagamento: Carta</p>
+  <p>Ritiro in negozio: {order.pickupDate}</p>
+  <p>Puoi seguire l'ordine qui: <a href="{link}">{link}</a></p>
+  <h2>Venditore</h2>
+  <p>{seller.legalName}<br>
+  {seller.addressLine}<br>
+  {seller.postalCode} {seller.city}<br>
+  {#if seller.vatNumber}P. IVA {seller.vatNumber}<br>{/if}
+  Email: {seller.email}
+  {#if seller.phone}<br>Telefono: {seller.phone}{/if}</p>
+  <p>Diritto di recesso: per i fiori freschi e i beni che rischiano di deteriorarsi o scadere rapidamente il diritto di recesso è escluso (art. 59 del Codice del consumo).</p>
+  <p>Resta ferma la garanzia legale di conformità prevista dal Codice del consumo.</p>
+</body>
+</html>

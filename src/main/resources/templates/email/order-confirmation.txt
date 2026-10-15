@@ -1,0 +1,24 @@
+Ciao {order.customerName},
+grazie per il tuo ordine: il pagamento è andato a buon fine.
+
+Ordine {order.number} del {order.orderDate}
+{#for line in order.lines}
+- {line.name} x {line.quantity}: {line.unitPrice} l'uno, {line.lineTotal} (IVA inclusa)
+{/for}
+Totale: {order.total} (IVA inclusa)
+Pagamento: Carta
+Ritiro in negozio: {order.pickupDate}
+
+Puoi seguire l'ordine qui:
+{link}
+
+Venditore
+{seller.legalName}
+{seller.addressLine}
+{seller.postalCode} {seller.city}
+{#if seller.vatNumber}P. IVA {seller.vatNumber}
+{/if}Email: {seller.email}
+{#if seller.phone}Telefono: {seller.phone}
+{/if}
+Diritto di recesso: per i fiori freschi e i beni che rischiano di deteriorarsi o scadere rapidamente il diritto di recesso è escluso (art. 59 del Codice del consumo).
+Resta ferma la garanzia legale di conformità prevista dal Codice del consumo.

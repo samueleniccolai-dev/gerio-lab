@@ -50,6 +50,17 @@ public class Tenant extends AuditedEntity {
 
   public String phone;
 
+  @Column(name = "vat_number")
+  public String vatNumber;
+
+  @Column(name = "address_line")
+  public String addressLine;
+
+  @Column(name = "postal_code")
+  public String postalCode;
+
+  public String city;
+
   @Column(name = "stripe_account_id")
   public String stripeAccountId;
 

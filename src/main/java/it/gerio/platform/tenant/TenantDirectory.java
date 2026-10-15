@@ -31,6 +31,17 @@ public class TenantDirectory {
   @Inject SessionFactory sessionFactory;
   @Inject PlatformDomain platform;
 
+  /** The shop with this id, whatever its state; used by jobs that run as the platform. */
+  public Optional<ResolvedShop> findById(String id) {
+    return withPlatformSession(
+        session ->
+            session
+                .createSelectionQuery("from Tenant where id = :id", Tenant.class)
+                .setParameter("id", id)
+                .uniqueResultOptional()
+                .map(tenant -> resolve(session, tenant)));
+  }
+
   public Optional<ResolvedShop> findBySlug(String slug) {
     return withPlatformSession(
         session ->

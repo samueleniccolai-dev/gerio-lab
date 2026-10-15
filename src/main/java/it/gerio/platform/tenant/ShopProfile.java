@@ -12,9 +12,20 @@ import java.util.Optional;
 @ApplicationScoped
 public class ShopProfile {
 
-  /** Contacts and the Stripe connected account; {@code stripeAccountId} is null until connected. */
+  /**
+   * Contacts, legal data of the seller and the Stripe connected account; {@code stripeAccountId} is
+   * null until connected.
+   */
   public record Info(
-      String phone, String email, String stripeAccountId, boolean stripeChargesEnabled) {
+      String phone,
+      String email,
+      String stripeAccountId,
+      boolean stripeChargesEnabled,
+      String legalName,
+      String vatNumber,
+      String addressLine,
+      String postalCode,
+      String city) {
 
     /** The payment can be started only on a connected account that can receive charges. */
     public boolean canCharge() {
@@ -33,6 +44,15 @@ public class ShopProfile {
       return Optional.empty();
     }
     return Optional.of(
-        new Info(tenant.phone, tenant.email, tenant.stripeAccountId, tenant.stripeChargesEnabled));
+        new Info(
+            tenant.phone,
+            tenant.email,
+            tenant.stripeAccountId,
+            tenant.stripeChargesEnabled,
+            tenant.legalName,
+            tenant.vatNumber,
+            tenant.addressLine,
+            tenant.postalCode,
+            tenant.city));
   }
 }

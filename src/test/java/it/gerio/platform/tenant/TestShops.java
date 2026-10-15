@@ -90,6 +90,9 @@ public final class TestShops {
       statement.execute("delete from product");
       statement.execute("delete from category");
       statement.execute("delete from tenant_domain");
+      statement.execute(
+          "do $$ begin if to_regclass('outbox_message') is not null then"
+              + " execute 'delete from outbox_message'; end if; end $$");
       statement.execute("delete from tenant");
     }
   }

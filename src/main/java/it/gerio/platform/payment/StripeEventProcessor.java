@@ -1,6 +1,7 @@
 package it.gerio.platform.payment;
 
 import it.gerio.platform.cart.CartService;
+import it.gerio.platform.notifications.Outbox;
 import it.gerio.platform.order.CustomerOrder;
 import it.gerio.platform.order.OrderLookup;
 import it.gerio.platform.order.OrderStateMachine;
@@ -35,6 +36,7 @@ public class StripeEventProcessor {
   @Inject OrderStateMachine stateMachine;
   @Inject CartService cartService;
   @Inject StripeEventLog eventLog;
+  @Inject Outbox outbox;
 
   @Transactional(Transactional.TxType.REQUIRES_NEW)
   public void process(String eventId, String type, SessionData session) {
@@ -65,6 +67,7 @@ public class StripeEventProcessor {
       if (order.cartId != null) {
         cartService.deleteItems(order.cartId);
       }
+      outbox.enqueueConfirmation(order.getTenantId(), order.getId());
     } else if (order.status == OrderStatus.EXPIRED) {
       LOG.warnf(
           "Event %s: order %d already expired, but a real payment came (%s)",

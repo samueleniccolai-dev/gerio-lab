@@ -1,7 +1,7 @@
 ---
 giro: 016
 traguardo: T6
-fase: domanda (da: critica)
+fase: critica
 inizio: 2026-10-15T14:02:30Z
 ricerca: sì
 accettazione:
@@ -9,7 +9,7 @@ ripreso: no
 ---
 # Piano del giro 016 — condizioni di vendita: pagina e PDF allegato alla conferma (T6, parte 3)
 
-## DOMANDA (porta a senso unico: dipendenza nuova)
+## DOMANDA — RISPOSTA: opzione A (15/10, ⏱ 2', da Gerio: sì)
 
 **Contesto.** SPEC §9.2 vuole in allegato all'email di conferma «il PDF delle condizioni di vendita
 nella versione accettata (`terms_version`)»: un link non basta come supporto durevole (anche §12.3,

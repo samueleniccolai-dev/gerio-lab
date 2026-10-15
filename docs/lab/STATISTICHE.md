@@ -1,6 +1,6 @@
 # Statistiche — laboratorio (metodo v3) contro Gerio (metodo v2)
 
-> Generato da `scripts/metrics/statistiche.py` il 2026-10-15 13:28 UTC. Dati: `metrics/giri.csv`, `metrics/baseline-gerio.csv`. Definizioni e cautele: `docs/ESPERIMENTO.md`.
+> Generato da `scripts/metrics/statistiche.py` il 2026-10-15 17:58 UTC. Dati: `metrics/giri.csv`, `metrics/baseline-gerio.csv`. Definizioni e cautele: `docs/ESPERIMENTO.md`.
 >
 > T0 di Gerio: 2026-10-04 14:06 UTC · T0 del laboratorio: 2026-10-11T09:43:32Z · traguardi passati dal laboratorio: 5 su 8.
 
@@ -16,7 +16,7 @@ decisione registrata più le domande bloccanti, nel laboratorio ratifiche più p
 | T3 Catalogo + pagina prodotto, con dati finti da fioraia ✅ | 24,7 ↔ 12,0 | 1 ↔ 3 | 30 ↔ 0 | 8 ↔ 2 | 1 ↔ 0 | 12,7 ↔ 7,2 | 971 ↔ 581 |
 | T4 Carrello ✅ | 32,3 ↔ 21,1 | 1 ↔ 2 | 35 ↔ 2 | 11 ↔ 3 | 0 ↔ 0 | 14,8 ↔ 2,6 | 672 ↔ 470 |
 | T5 Checkout con Stripe Checkout in test + webhook idempotente ✅ | 73,2 ↔ 98,5 | 2 ↔ 4 | 25 ↔ 32 | 25 ↔ 6 | 0 ↔ 1 | 12,9 ↔ 18,3 | 2.237 ↔ 1.794 |
-| T6 Email di conferma + pagina stato ordine | 102,3 ↔ — | 2 ↔ 2 | 40 ↔ 2 | 19 ↔ 4 | 1 ↔ 0 | 31,1 ↔ 3,0 | 1.201 ↔ 706 |
+| T6 Email di conferma + pagina stato ordine | 102,3 ↔ — | 2 ↔ 3 | 40 ↔ 4 | 19 ↔ 6 | 1 ↔ 0 | 31,1 ↔ 6,8 | 1.201 ↔ 907 |
 | T7 Zone di consegna e orario limite, versione semplice | 114,5 ↔ — | 1 ↔ 0 | 20 ↔ — | 16 ↔ — | 1 ↔ — | 24,6 ↔ — | 1.100 ↔ — |
 | T8 Pagine legali minime + rifiniture demo | — ↔ — | 0 ↔ 0 | — ↔ — | — ↔ — | — ↔ — | — ↔ — | — ↔ — |
 
@@ -52,7 +52,8 @@ Gerio, cicli senza stima dei minuti umani nel rapporto: 6. I minuti umani dei lo
 | 012 | T5 | mergiata | #15 | 31 | no | 0 | 3 | 3/3 | 0 |
 | 013 | T5 | mergiata | #17 | 116 | no | 1 | 1 | 1/1 | 30 |
 | 014 | T6 | mergiata | #18 | 24 | sì | 0 | 2 | 3/3 | 0 |
-| 015 | T6 | aperta | #19 | 35 | — | 0 | 2 | 2/3 | 2 |
+| 015 | T6 | mergiata | #19 | 35 | no | 0 | 2 | 2/3 | 2 |
+| 016 | T6 | aperta | #20 | 236 | — | 0 | 2 | 2/3 | 2 |
 
 Merge fuori catena (PR di un giro entrate in main senza i controlli né la revisione umana): 1 (008).
 

@@ -28,7 +28,7 @@ difetto_di:
 ---
 # Rapporto del giro 013 — strumenti per la prova Stripe in produzione (T5, parte 4)
 
-> **PR:** #17 · **Branch:** `claude/giro-013-t5` · **Traguardo:** T5 — parziale
+> **PR:** #17 · **Branch:** `claude/giro-013-t5` · **Traguardo:** T5 — passato
 > **Domande che bloccano:** nessuna
 
 ## Per te, in 10 righe
@@ -44,8 +44,11 @@ difetto_di:
 - Smoke e script: 22 test di accettazione `Giro013*` verdi; 355 test totali (prova: revisore, `verify` in copia isolata).
 - Webhook di produzione: `curl -X POST https://gerio-lab.samueleniccolai.com/webhooks/stripe/connect` → 400 (15/10).
 
+## Prova vera (15/10, a mano dall'umano)
+- `prova-stripe.sh` → URL di Stripe Checkout; pagamento con 4242; `esito` → ordine 2026-0002, «Pagamento ricevuto», totale 104,80 €. T5 passato. Trovato e corretto un difetto: `-o /dev/null` falliva con il curl di Windows (2b0f312).
+
 ## Cosa non funziona ancora
-- Nessuna prova vera: lo script non è stato lanciato in produzione e nessun pagamento è avvenuto. T5 resta `in-corso`.
+- Non verificato a mano il 200 dell'evento nella dashboard Stripe (l'ordine PAID lo implica).
 - Il curl finto dei test usa lo spazio normale nei prezzi; il caso NBSP è stato provato solo con sonde del revisore, non committate.
 - Localmente 2 test di Giro006 (Caddy) rossi per limite Docker Hub 429; in copia isolata il `verify` è verde.
 

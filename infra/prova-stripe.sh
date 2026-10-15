@@ -9,7 +9,7 @@ usage() { echo "usage: $0 <demo-domain> | $0 esito <demo-domain> <checkout-url>"
 fail() { echo "$*" >&2; exit 1; }
 
 esito() {
-  local base="https://$1" sid i page
+  local base="https://$1" sid i page num
   sid="${2#*/pay/}"; sid="${sid%%[#?/]*}"
   case "$sid" in cs_test_*) ;; *) fail "not a Checkout test URL: no cs_test_ session" ;; esac
   for i in $(seq 1 15); do
@@ -21,7 +21,9 @@ esito() {
     esac
     case "$page" in
       *"Pagamento ricevuto"*)
-        printf '%s\n' "$page" | grep -Eo '20[0-9]{2}-[0-9]{4}' | head -n 1
+        num=$(printf '%s\n' "$page" | grep -Eo '20[0-9]{2}-[0-9]{4}' | head -n 1 || true)
+        if [ -n "$num" ]; then printf '%s\n' "$num"
+        else echo "pagamento ricevuto, ma nessun numero ordine trovato nella pagina" >&2; fi
         return 0 ;;
       *"non è stato completato"*) fail "sessione scaduta o pagamento non completato" ;;
     esac
@@ -51,18 +53,21 @@ variant_of() {
     sed -n 's/.*name="variantId" value="\([0-9]*\)".*/\1/p' | head -n 1
 }
 add() { # <product> <row> <quantity>
-  local page vid csrf
+  local page vid csrf code
   page=$(get "/prodotti/$1") || fail "product page $1 unreachable"
   vid=$(variant_of "$page" "$2")
   [ -n "$vid" ] || fail "variant «$2» not found on $1"
   csrf=$(printf '%s' "$page" | sed -n 's/.*name="csrf-token" value="\([^"]*\)".*/\1/p' | head -n 1)
-  curl -s -o /dev/null -m 15 -b "$jar" -c "$jar" --data-urlencode "csrf-token=$csrf" \
-    --data-urlencode "variantId=$vid" --data-urlencode "quantity=$3" "$base/carrello/aggiungi"
+  code=$(curl -s -o /dev/null -w '%{http_code}' -m 15 -b "$jar" -c "$jar" --data-urlencode "csrf-token=$csrf" \
+    --data-urlencode "variantId=$vid" --data-urlencode "quantity=$3" "$base/carrello/aggiungi") || code=000
+  case "$code" in 2??|3??) ;; *) fail "POST /carrello/aggiungi for «$2» answered $code, expected 2xx/3xx" ;; esac
 }
 add rose-rosse "12 rose" 1
 add orchidea-bianca "Vaso 12 cm" 2
 
 summary=$(get /checkout) || fail "checkout summary unreachable"
+summary=${summary//$'\xc2\xa0'/ }   # app prices use NBSP (U+00A0)
+summary=${summary//$'\xe2\x80\xaf'/ } # or narrow NBSP (U+202F)
 case "$summary" in *"Ordina e paga"*) ;; *) fail "checkout spento: no «Ordina e paga» in the summary" ;; esac
 case "$summary" in *"104,80 €"*) ;; *) fail "unexpected total: expected 104,80 €" ;; esac
 min=$(printf '%s' "$summary" | sed -n 's/.*name="pickupDate"[^>]* min="\([^"]*\)".*/\1/p' | head -n 1)

@@ -17,7 +17,7 @@ Dopo il merge di #15 e i tuoi passi (runbook §4): giro 013, prova in produzione
 
 ## Per l'umano
 
-- **DOMANDA giro 013 (PR #17):** in produzione il webhook Stripe risponde 503: mancano segreti/variabile Stripe test (runbook §4, passi 1–3). Opzioni: A (raccomandata) fai i passi e rilancia il deploy, poi paghi tu con la 4242; B solo strumenti, prova al giro 014; C pagamento automatico (sconsigliata). Dettagli in `docs/lab/giri/013-piano.md`.
+- Giro 013 (PR #17): risposta ricevuta il 15/10 (opzione A, webhook ora 400); il giro riprende dalla critica.
 
 - PR #15: revisione umana (infra/, curl finto di Giro006). Per il giro 013: account/chiavi Stripe test, webhook su dominio piattaforma, segreti in `produzione`, 3 variabili in `consegna.yml`.
 - Ratifiche da leggere: carrello non svuotato, ordine nuovo se cambia (n. 22); checkout spento senza configurazione Stripe (n. 23); CSRF e webhook (n. 18).

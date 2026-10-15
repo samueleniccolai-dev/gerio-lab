@@ -1,7 +1,7 @@
 ---
 giro: 013
 traguardo: T5
-fase: domanda (da: piano)
+fase: critica
 inizio: 2026-10-15T09:10:56Z
 ricerca: no
 accettazione:

@@ -15,17 +15,17 @@ demo="https://demo.${LAB_BASE_DOMAIN}"
 code() { curl -s -o /dev/null -m 10 -w '%{http_code}' "$@" || true; }
 
 check() {
-  local body headers host
+  local body headers host hook
   body=$(curl -fsS -m 10 "$base/") || return 1
   case "$body" in *"Negozi locali online"*) ;; *) echo "landing text missing" >&2; return 1 ;; esac
   body=$(curl -fsS -m 10 "$demo/catalogo") || return 1
   case "$body" in *"Fioreria Il Glicine"*) ;; *) echo "demo catalog: shop name missing" >&2; return 1 ;; esac
   body=$(curl -fsS -m 10 "$demo/prodotti/rose-rosse") || return 1
   case "$body" in *"Mazzo di rose rosse"*) ;; *) echo "demo product: name missing" >&2; return 1 ;; esac
-  case "$(code -X POST "$base/webhooks/stripe/connect")" in
-    400|503) ;;
-    *) echo "webhook route unexpected on $base" >&2; return 1 ;;
-  esac
+  # With the webhook secret configured the signature check must run (400); 503 means it is missing.
+  hook=$(code -X POST "$base/webhooks/stripe/connect")
+  if [ "$hook" = "503" ] && [ -z "${STRIPE_CONNECT_WEBHOOK_SECRET:-}" ]; then hook=400; fi
+  [ "$hook" = "400" ] || { echo "webhook route unexpected on $base (answered $hook; 503 = secret not active)" >&2; return 1; }
   [ "$(code -X POST "$demo/webhooks/stripe/connect")" = "404" ] || { echo "webhook route is open on the demo host" >&2; return 1; }
   for host in "$LAB_BASE_DOMAIN" "demo.${LAB_BASE_DOMAIN}"; do
     headers=$(curl -sI -m 10 "https://${host}/") || return 1

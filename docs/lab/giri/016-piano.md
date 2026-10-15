@@ -1,10 +1,10 @@
 ---
 giro: 016
 traguardo: T6
-fase: critica
+fase: accettazione
 inizio: 2026-10-15T14:02:30Z
 ricerca: sì
-accettazione:
+accettazione: 78cfb80
 ripreso: no
 ---
 # Piano del giro 016 — condizioni di vendita: pagina e PDF allegato alla conferma (T6, parte 3)
@@ -53,24 +53,68 @@ inventato, in italiano, con queste sezioni (titoli esatti, usati dai test):
 1. «Venditore» (dati legali del negozio, dal profilo)
 2. «Prezzi e pagamento» («I prezzi sono in euro, IVA inclusa. Il pagamento avviene con carta tramite Stripe.»)
 3. «Consegna e ritiro»
-4. «Diritto di recesso» («escluso per i fiori freschi e le composizioni, beni deperibili (art. 59, comma 1, lettera d, Codice del consumo)»)
+4. «Diritto di recesso» («Il diritto di recesso è escluso per i fiori freschi e le composizioni,
+   beni che rischiano di deteriorarsi o scadere rapidamente (art. 59, comma 1, lettera d, Codice
+   del consumo).» — la «è» serve al test degli accenti nel PDF)
 5. «Garanzia legale e reclami»
 6. In fondo: «Versione 2026-10-12».
 
+Dati di Marco (già nei dati dei test del giro 015): «Fiori di Marco Srl», P.IVA `IT09876543210`,
+«Via del Fosso Rosso 99». Demo: «Il Glicine di Lucia Ferri», P.IVA `IT00000000000`.
+
+Email di conferma, parte HTML e parte testo: una riga «Le condizioni di vendita (versione
+2026-10-12) sono in allegato.».
+
+## Come (vincoli per il costruttore, dalla critica)
+- **Template `legal/terms.html`: documento XHTML autonomo e ben formato.** `<!DOCTYPE html>`
+  maiuscolo, tutti i tag chiusi (`<meta ... />`, `<br />`), nessuna entità con nome (`&nbsp;`,
+  `&egrave;`…: caratteri UTF-8 o entità numeriche), nessun `<link>`/`<script>` a risorse. **Non**
+  estende `storefront/layout.html`: il parser XML di openhtmltopdf lancerebbe `SAXParseException` e
+  la riga dell'outbox ritenterebbe fino a FAILED. La pagina HTML usa lo stesso template (stile in
+  `<style>` interno, minimo).
+- **Versione dell'ordine.** `OrderLookup.Confirmation` riceve `termsVersion`. La costante
+  `TERMS_VERSION` passa da `CheckoutService` a `legal` (es. `TermsDocument.CURRENT_VERSION`), e
+  `CheckoutService` la legge da lì. `ConfirmationComposer` chiede a `TermsDocument` il PDF della
+  versione dell'ordine; versione ignota → eccezione → la riga resta `PENDING` con `last_error` e si
+  ritenta (nessuna email con un PDF sbagliato).
+- **Date del PDF.** Data di creazione e di modifica fissate alla data della versione (mezzanotte
+  `Europe/Rome`): `renderer.createPDFWithoutClosing()` → `getPdfDocument().getDocumentInformation()`
+  → `save` su `ByteArrayOutputStream`, senza riaprire i byte. Non si chiede l'uguaglianza
+  byte per byte tra due generazioni (il trailer `/ID` può variare): l'uguaglianza tra email e pagina
+  vale grazie alla cache.
+- **Cache e concorrenza.** Chiave `(tenantId, versione)`, con `tenantId` da `CurrentTenant.Shop`,
+  mai dall'host. Il profilo del negozio si legge dentro la transazione; il PDF si genera fuori;
+  in cache con `putIfAbsent` (si restituisce il valore già presente) o `computeIfAbsent` su dati già
+  letti. Nessuna query dentro la funzione della cache.
+- **Log.** `quarkus.log.category."com.openhtmltopdf".level=WARN` in `application.properties`.
+- `noShopNoTerms` è verde già oggi (404): resta come guardia, non come prova del lavoro.
+
 ## Fatto quando — controlli eseguibili
 - [ ] `GET /condizioni-di-vendita` con Host del negozio demo → 200, `text/html`, contiene i 5 titoli,
-      la ragione sociale e la partita IVA di demo, «Versione 2026-10-12».
-- [ ] Stessa richiesta con Host del secondo negozio (Marco) → 200 con i dati di Marco, nessun dato di demo.
-- [ ] Host sconosciuto o della piattaforma → 404 (mai negozio indefinito).
+      la ragione sociale e la partita IVA di demo, «Il diritto di recesso è escluso», «Versione
+      2026-10-12», non la P.IVA di Marco.
+- [ ] Stessa richiesta con Host di Marco → 200 con ragione sociale, P.IVA e indirizzo di Marco,
+      nessun dato di demo («Glicine», P.IVA, indirizzo, email).
+- [ ] Host sconosciuto (`sconosciuto.localhost`) o della piattaforma (`localhost`) → 404 sia per la
+      pagina sia per il `.pdf` (mai negozio indefinito).
 - [ ] `GET /condizioni-di-vendita.pdf` (Host demo) → 200, `application/pdf`, corpo che inizia con
-      `%PDF-`, con `Content-Disposition` `inline; filename="condizioni-di-vendita-2026-10-12.pdf"`.
-- [ ] Ordine pagato di demo → `drainOnce()` → l'email in `MockMailbox` ha **un** allegato
-      `condizioni-di-vendita-2026-10-12.pdf`, tipo `application/pdf`, che inizia con `%PDF-`.
-- [ ] Isolamento: email di un ordine di Marco → allegato con i dati di Marco (testo estratto dal PDF
-      o confronto byte con `GET /condizioni-di-vendita.pdf` sull'host di Marco), diverso da demo.
-- [ ] Il PDF di una versione si genera una sola volta per negozio: due email dello stesso negozio →
-      allegati identici byte per byte (nessuna data di generazione variabile nel PDF).
-- [ ] Il testo dell'email dice che le condizioni sono in allegato.
+      `%PDF-`, `Content-Disposition` `inline; filename="condizioni-di-vendita-2026-10-12.pdf"`;
+      testo estratto con PDFBox: 5 titoli, ragione sociale e P.IVA di demo, «Il diritto di recesso
+      è escluso» (accenti), «Versione 2026-10-12», non la P.IVA di Marco.
+- [ ] `.pdf` sull'host di Marco: testo con i dati di Marco, nessun dato di demo.
+- [ ] Due richieste contemporanee del `.pdf` (stesso negozio, due thread, `CountDownLatch`) → stessi
+      byte, e una richiesta successiva ancora gli stessi byte (cache per `(tenantId, versione)`).
+- [ ] Ordine pagato di demo → `drainOnce()` → l'email ha **un** allegato
+      `condizioni-di-vendita-2026-10-12.pdf`, tipo `application/pdf`, `%PDF-`, il cui testo ha i 5
+      titoli, la P.IVA di demo, «Versione 2026-10-12», la frase accentata, non la P.IVA di Marco.
+- [ ] Parte HTML e parte testo dell'email: «condizioni di vendita» e «in allegato».
+- [ ] Due ordini pagati di demo → due email con allegati identici byte per byte, uguali al `.pdf`
+      della pagina di demo.
+- [ ] Isolamento: un passaggio con un ordine di demo e uno di Marco → l'allegato di Marco ha
+      ragione sociale e P.IVA di Marco e niente di demo (testo uguale a quello del `.pdf` di Marco);
+      quello di demo niente di Marco; entrambe le righe `SENT`.
+- [ ] Ordine pagato con `terms_version = '2019-01-01'` (versione ignota) → nessuna email; la riga
+      resta `PENDING`, `attempts = 1`, `last_error` valorizzato.
 - [ ] `./mvnw -B -ntp verify` verde; nessun test esistente rotto.
 
 ## Fuori perimetro
@@ -86,8 +130,9 @@ inventato, in italiano, con queste sezioni (titoli esatti, usati dai test):
 ## Test di accettazione (scritti prima, intoccabili dal costruttore)
 | File | Dato … quando … allora … |
 |---|---|
-| `Giro016TermsAcceptanceTest` | Host demo / Marco / sconosciuto → pagina con dati giusti / 404; PDF `%PDF-` con nome file della versione |
-| `Giro016TermsAttachmentAcceptanceTest` | ordine pagato → email con un allegato PDF; due email stesso negozio → allegati identici; Marco ≠ demo |
+| `Giro016TermsAcceptanceTest` | Host demo / Marco / piattaforma / sconosciuto → pagina e PDF con i dati giusti o 404; testo del PDF (titoli, P.IVA, accenti, versione); due richieste contemporanee → stessi byte |
+| `Giro016TermsAttachmentAcceptanceTest` | ordine pagato → un allegato PDF con il testo giusto; «in allegato» nelle due parti; due email stesso negozio → allegati identici e uguali alla pagina; Marco ≠ demo; versione ignota → nessuna email, riga ritentata |
+| `Giro016Terms` (supporto) | PDFBox e `MockMailbox` raggiunti per nome: senza la dipendenza i test falliscono con un'asserzione, non con un errore di compilazione |
 
 ## Porte
 - Doppio senso previste: nuova risorsa `storefront/TermsResource` e template `legal/terms.html`;
@@ -96,9 +141,10 @@ inventato, in italiano, con queste sezioni (titoli esatti, usati dai test):
 - Senso unico: **DOMANDA** sopra (dipendenza per il PDF).
 
 ## Rischi di concorrenza
-Cache del PDF: due worker possono generarlo insieme la prima volta; innocuo se la generazione è
-deterministica (stesso contenuto) e la cache è `ConcurrentHashMap.computeIfAbsent`. Generazione
-fuori dalla transazione del worker, per non tenerla aperta. Nessun nuovo stato in database.
+Cache del PDF: due worker (o due richieste) possono generarlo insieme la prima volta. Profilo letto
+nella transazione, generazione fuori; `putIfAbsent` restituisce il PDF già in cache a chi arriva
+secondo, così tutti vedono gli stessi byte. Chiave `(tenantId da CurrentTenant, versione)`. Test a
+due thread con `CountDownLatch`. Nessun nuovo stato in database.
 
 ## Budget
 Righe di produzione ≤ 250; file ≤ 8; una sessione.
@@ -113,6 +159,23 @@ Righe di produzione ≤ 250; file ≤ 8; una sessione.
 ## Idee per dopo
 - Tabella `legal_document` con versioni e PDF archiviati, quando il negozio potrà modificare il testo.
 - Piè di pagina legale su ogni pagina con link alle condizioni.
+- Quando il profilo del negozio sarà modificabile, la chiave della cache dovrà includere una
+  versione del profilo (o la cache si svuota alla modifica).
+- Ordini al banco con `terms_version` null: nessun allegato (oggi la colonna è `not null`).
 
 ## Critica ricevuta e cosa cambia
-(dopo il critico)
+Accolti tutti e 3 i «DA CORREGGERE» e i facoltativi:
+1. `legal/terms.html` XHTML autonomo e ben formato, non estende il layout (sezione «Come»).
+2. `termsVersion` in `OrderLookup.Confirmation`; PDF della versione dell'ordine; versione ignota →
+   eccezione e nuovo tentativo; `TERMS_VERSION` spostata in `legal` (sezione «Come», test
+   `anOrderWithAnUnknownTermsVersionGetsNoMailAndItsRowIsRetried`).
+3. Date fissate alla data della versione via `createPDFWithoutClosing()`, senza riaprire i byte;
+   tolto il requisito «byte identici tra due generazioni»; identità tra email e pagina grazie alla
+   cache; confronto tra negozi sul testo estratto con PDFBox.
+- Concorrenza: profilo letto nella transazione, generazione fuori, `putIfAbsent`, chiave dal
+  `CurrentTenant`; test a due thread con `CountDownLatch`.
+- Test aggiunti: testo estratto (titoli, P.IVA, versione, «è»), Marco ≠ demo nell'allegato,
+  `.pdf` su host piattaforma/sconosciuto → 404, «in allegato» nelle due parti, versione ignota.
+- Facoltativi: soglia del logger openhtmltopdf a `WARN`; due note in «Idee per dopo».
+Scartato: nulla. Nota: la «versione diversa ma nota» non si prova perché esiste una sola versione;
+si prova la versione ignota.

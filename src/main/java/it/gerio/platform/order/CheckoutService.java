@@ -5,6 +5,7 @@ import it.gerio.platform.cart.CartService;
 import it.gerio.platform.cart.CartService.CartView;
 import it.gerio.platform.cart.CartService.Snapshot;
 import it.gerio.platform.cart.CartService.SnapshotLine;
+import it.gerio.platform.legal.TermsDocument;
 import it.gerio.platform.payment.StripeCheckout;
 import it.gerio.platform.payment.StripeCheckout.PaymentUnavailableException;
 import it.gerio.platform.tenant.CurrentTenant;
@@ -45,7 +46,6 @@ import org.jboss.logging.Logger;
 @ApplicationScoped
 public class CheckoutService {
 
-  static final String TERMS_VERSION = "2026-10-12";
   static final String FULFILLMENT_PICKUP = "PICKUP";
   // Stripe wants at least 30 minutes: 31 leaves room for the clock between us and them (§8.3).
   static final Duration SESSION_LIFETIME = Duration.ofMinutes(31);
@@ -285,7 +285,7 @@ public class CheckoutService {
     order.deliveryFeeCents = 0;
     order.totalCents = subtotal;
     order.vatBreakdown = VatBreakdown.toJson(vat);
-    order.termsVersion = TERMS_VERSION;
+    order.termsVersion = TermsDocument.CURRENT_VERSION;
     order.holdExpiresAt = now.plus(HOLD);
     stateMachine.start(order);
     for (SnapshotLine line : cart.lines()) {

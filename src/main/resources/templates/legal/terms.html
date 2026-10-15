@@ -1,0 +1,31 @@
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml" lang="it">
+<head>
+  <meta charset="utf-8" />
+  <title>Condizioni di vendita</title>
+  <style>
+    body { font-family: sans-serif; font-size: 11pt; line-height: 1.4; margin: 1.5em; }
+    h1 { font-size: 18pt; }
+    h2 { font-size: 13pt; margin-top: 1.2em; }
+  </style>
+</head>
+<body>
+  <h1>Condizioni di vendita</h1>
+  <h2>Venditore</h2>
+  <p>{seller.legalName}<br />
+  {seller.addressLine}<br />
+  {seller.postalCode} {seller.city}<br />
+  {#if seller.vatNumber}P. IVA {seller.vatNumber}<br />{/if}
+  {#if seller.email}Email: {seller.email}<br />{/if}
+  {#if seller.phone}Telefono: {seller.phone}{/if}</p>
+  <h2>Prezzi e pagamento</h2>
+  <p>I prezzi sono in euro, IVA inclusa. Il pagamento avviene con carta tramite Stripe.</p>
+  <h2>Consegna e ritiro</h2>
+  <p>L'ordine si ritira in negozio, o si riceve a domicilio, nel giorno scelto al momento dell'ordine. Il giorno è indicato nella conferma.</p>
+  <h2>Diritto di recesso</h2>
+  <p>Il diritto di recesso è escluso per i fiori freschi e le composizioni, beni che rischiano di deteriorarsi o scadere rapidamente (art. 59, comma 1, lettera d, Codice del consumo).</p>
+  <h2>Garanzia legale e reclami</h2>
+  <p>Resta ferma la garanzia legale di conformità prevista dal Codice del consumo. Per un reclamo scrivi al venditore all'indirizzo email indicato sopra.</p>
+  <p>Versione {version}</p>
+</body>
+</html>

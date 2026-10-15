@@ -3,6 +3,7 @@ package it.gerio.platform.notifications;
 import io.quarkus.mailer.Mail;
 import io.quarkus.qute.Location;
 import io.quarkus.qute.Template;
+import it.gerio.platform.legal.TermsDocument;
 import it.gerio.platform.order.OrderLookup;
 import it.gerio.platform.order.OrderLookup.Confirmation;
 import it.gerio.platform.tenant.CurrentTenant;
@@ -29,6 +30,7 @@ public class ConfirmationComposer {
   @Inject TenantContext tenantContext;
   @Inject OrderLookup orders;
   @Inject ShopProfile shopProfile;
+  @Inject TermsDocument terms;
 
   @ConfigProperty(name = "app.mail.from-address")
   String fromAddress;
@@ -52,6 +54,10 @@ public class ConfirmationComposer {
                 html.data("order", order).data("seller", seller).data("link", link).render())
             .setText(text.data("order", order).data("seller", seller).data("link", link).render())
             .setFrom(from(shop.displayName()));
+    mail.addAttachment(
+        TermsDocument.fileName(order.termsVersion()),
+        terms.pdf(order.termsVersion()),
+        "application/pdf");
     return seller.email() == null ? mail : mail.setReplyTo(seller.email());
   }
 

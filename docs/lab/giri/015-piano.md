@@ -1,7 +1,7 @@
 ---
 giro: 015
 traguardo: T6
-fase: revisione
+fase: chiusura
 inizio: 2026-10-15T12:51:40Z
 ricerca: sì
 accettazione: 7945c4d

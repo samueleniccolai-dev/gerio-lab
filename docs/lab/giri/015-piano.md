@@ -1,7 +1,7 @@
 ---
 giro: 015
 traguardo: T6
-fase: domanda (da: piano)
+fase: piano
 inizio: 2026-10-15T12:51:40Z
 ricerca: sì
 accettazione:

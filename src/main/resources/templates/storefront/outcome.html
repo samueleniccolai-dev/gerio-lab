@@ -6,6 +6,7 @@
     <p>Ordine {outcome.number}</p>
     <p>Totale: <strong>{outcome.total}</strong></p>
     <p>Riceverai un'email di conferma.</p>
+    <p><a href="/ordine/{outcome.token}">Segui il tuo ordine</a></p>
     {#else if outcome.expired}
     <h1>Il pagamento non è stato completato</h1>
     <p>Ordine {outcome.number}</p>

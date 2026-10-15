@@ -1,0 +1,26 @@
+{#include storefront/layout}
+  {#title}Ordine {status.number} · {shopName}{/title}
+  {#body}
+    <h1>Ordine {status.number}</h1>
+    <p>{shopName}</p>
+    <p>Stato: <strong>{status.statusLabel}</strong></p>
+    <p>Data dell'ordine: {status.orderDate}</p>
+    <p>Ritiro in negozio: {status.pickupDate}</p>
+    <table>
+      <thead><tr><th>Articolo</th><th>Quantità</th><th>Prezzo</th><th>Totale</th></tr></thead>
+      <tbody>
+      {#for line in status.lines}
+        <tr><td>{line.name}</td><td>{line.quantity}</td><td>{line.unitPrice}</td><td>{line.lineTotal}</td></tr>
+      {/for}
+      </tbody>
+    </table>
+    <p>Totale: <strong>{status.total}</strong></p>
+    <p>Per domande sull'ordine:
+      {#if status.shopPhone}Telefono: {status.shopPhone}{/if}
+      {#if status.shopEmail}<br>Email: {status.shopEmail}{/if}
+    </p>
+    {#if status.expired}
+    <p><a href="/carrello">Torna al carrello</a></p>
+    {/if}
+  {/body}
+{/include}

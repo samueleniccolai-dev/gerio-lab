@@ -41,6 +41,17 @@ public class OrderLookup {
       String shopPhone,
       String shopEmail) {}
 
+  /** What the confirmation email shows of a paid order (the customer's own data, for the mail). */
+  public record Confirmation(
+      String number,
+      String orderDate,
+      String pickupDate,
+      List<StatusLine> lines,
+      String total,
+      String customerName,
+      String customerEmail,
+      String token) {}
+
   /** The page reloads itself every 2 seconds up to this many times (30 seconds). */
   static final int MAX_RELOADS = 15;
 
@@ -131,16 +142,7 @@ public class OrderLookup {
     if (order == null) {
       return Optional.empty();
     }
-    List<StatusLine> lines =
-        OrderItem.<OrderItem>find("orderId", Sort.by("id"), order.getId()).stream()
-            .map(
-                item ->
-                    new StatusLine(
-                        item.nameSnapshot,
-                        item.quantity,
-                        Prices.format(item.unitPriceCents),
-                        Prices.format(item.lineTotalCents)))
-            .toList();
+    List<StatusLine> lines = lines(order);
     Optional<ShopProfile.Info> info = shopProfile.current();
     return Optional.of(
         new Status(
@@ -153,6 +155,37 @@ public class OrderLookup {
             Prices.format(order.totalCents),
             info.map(ShopProfile.Info::phone).orElse(null),
             info.map(ShopProfile.Info::email).orElse(null)));
+  }
+
+  /** What the confirmation email needs, in the current shop's terms; empty if not in this shop. */
+  public Optional<Confirmation> confirmation(long orderId) {
+    if (!(tenantContext.require() instanceof CurrentTenant.Shop shop)) {
+      return Optional.empty();
+    }
+    return Optional.ofNullable(CustomerOrder.<CustomerOrder>findById(orderId))
+        .map(
+            order ->
+                new Confirmation(
+                    order.number,
+                    DATE.format(order.getCreatedAt().atZone(shop.timezone())),
+                    DATE.format(order.deliveryDate),
+                    lines(order),
+                    Prices.format(order.totalCents),
+                    order.customerName,
+                    order.customerEmail,
+                    order.publicToken));
+  }
+
+  private static List<StatusLine> lines(CustomerOrder order) {
+    return OrderItem.<OrderItem>find("orderId", Sort.by("id"), order.getId()).stream()
+        .map(
+            item ->
+                new StatusLine(
+                    item.nameSnapshot,
+                    item.quantity,
+                    Prices.format(item.unitPriceCents),
+                    Prices.format(item.lineTotalCents)))
+        .toList();
   }
 
   private static int reloadsSoFar(String n) {

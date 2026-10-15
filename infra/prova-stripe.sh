@@ -58,8 +58,9 @@ add() { # <product> <row> <quantity>
   vid=$(variant_of "$page" "$2")
   [ -n "$vid" ] || fail "variant «$2» not found on $1"
   csrf=$(printf '%s' "$page" | sed -n 's/.*name="csrf-token" value="\([^"]*\)".*/\1/p' | head -n 1)
-  code=$(curl -s -o /dev/null -w '%{http_code}' -m 15 -b "$jar" -c "$jar" --data-urlencode "csrf-token=$csrf" \
+  code=$(curl -s -w '%{http_code}' -m 15 -b "$jar" -c "$jar" --data-urlencode "csrf-token=$csrf" \
     --data-urlencode "variantId=$vid" --data-urlencode "quantity=$3" "$base/carrello/aggiungi") || code=000
+  code=${code: -3}   # body (if any) precedes the code; no -o /dev/null, Windows curl cannot write it
   case "$code" in 2??|3??) ;; *) fail "POST /carrello/aggiungi for «$2» answered $code, expected 2xx/3xx" ;; esac
 }
 add rose-rosse "12 rose" 1
@@ -74,7 +75,7 @@ min=$(printf '%s' "$summary" | sed -n 's/.*name="pickupDate"[^>]* min="\([^"]*\)
 [ -n "$min" ] || fail "pickup date min not found"
 csrf=$(printf '%s' "$summary" | sed -n 's/.*name="csrf-token" value="\([^"]*\)".*/\1/p' | head -n 1)
 
-headers=$(curl -s -o /dev/null -D - -m 30 -b "$jar" -c "$jar" --data-urlencode "csrf-token=$csrf" \
+headers=$(curl -s -D - -m 30 -b "$jar" -c "$jar" --data-urlencode "csrf-token=$csrf" \
   --data-urlencode "customerName=Giulia Bianchi" \
   --data-urlencode "customerEmail=giulia.bianchi@example.com" \
   --data-urlencode "customerPhone=+39 333 000 1234" \

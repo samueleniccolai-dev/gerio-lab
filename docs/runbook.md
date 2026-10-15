@@ -108,7 +108,25 @@ Passi dell'umano (giro 012, per la prova del giro 013):
    variabile `DEMO_STRIPE_ACCOUNT_ID`.
 4. In `.github/workflows/consegna.yml` passare le tre variabili al passo di deploy.
 
-*(il resto da scrivere con il traguardo T5)*
+Prova con la carta di test (a mano, mai nello smoke: crea un ordine vero `PENDING_PAYMENT`):
+1. `infra/prova-stripe.sh demo.<LAB_BASE_DOMAIN>` porta un carrello demo (104,80 €, ritiro in negozio) fino a
+   Stripe Checkout e stampa solo l'URL. Exit 1 con «checkout spento» = chiavi Stripe o account collegato mancanti.
+2. L'URL va in un commento della PR: **è pubblico** e vale 24 ore, poi la sessione scade. Dati solo inventati.
+3. Paga con la carta `4242 4242 4242 4242`, scadenza futura e CVC qualsiasi.
+4. `infra/prova-stripe.sh esito demo.<LAB_BASE_DOMAIN> <url>` chiede l'esito fino a 15 volte, ogni 2 s, e stampa il
+   numero d'ordine. Exit 1: «scaduta» (sessione scaduta o non completata), «sconosciuta» (404, dominio o sessione
+   sbagliati), «in attesa» (il webhook non è arrivato: vedi sotto).
+5. Dashboard Stripe (test): l'evento `checkout.session.completed` deve avere risposta 200.
+
+Se il webhook non arriva (dashboard Stripe → Webhook → Consegne):
+| Risposta | Significato |
+|---|---|
+| 400 | segreto di firma sbagliato (`STRIPE_CONNECT_WEBHOOK_SECRET` non è quello dell'endpoint) |
+| 503 | segreto assente nell'app (variabile non passata al deploy) |
+| 404 | l'endpoint punta al dominio del demo: deve puntare a `<LAB_BASE_DOMAIN>` |
+
+Con il segreto configurato `infra/smoke.sh` pretende 400 dal webhook: 503 lo fa fallire con un messaggio «webhook».
+Rinvio di un evento (dashboard → Rinvia): deve dare 200 senza cambiare l'ordine (idempotenza).
 
 ## 5. Email in spam o rimbalzate
 *(da scrivere con il traguardo T6)*

@@ -2,7 +2,7 @@
 
 **Obiettivo:** traguardi T1–T8 di `docs/lab/traguardi.json` — demo in produzione con ordine
 end-to-end in Stripe test, lo stesso piano di Gerio al 4/10/2026.
-**Giro corrente:** 014 · **Fase:** chiusura · **PR aperta:** #18 · **Blocchi:** nessuno
+**Giro corrente:** 015 · **Fase:** domanda · **PR aperta:** #19 · **Blocchi:** nessuno
 **T0 del laboratorio:** 2026-10-11T09:43:32Z
 
 ## Prossimo
@@ -16,6 +16,8 @@ Dopo il merge di #18: giro 015, email di conferma di T6. Porte a senso unico pre
 - 012 — T5 in-corso: variabili Stripe verso il server, chiavi live rifiutate, smoke del webhook; 329 test. PR #15.
 
 ## Per l'umano
+
+- **DOMANDA giro 015 (PR #19):** posso aggiungere `io.quarkus:quarkus-mailer` (versione dal BOM)? Raccomandato A: solo mailer ora, provider SMTP e PDF dopo. Dettagli in `docs/lab/giri/015-piano.md`.
 
 - Ratifica n. 32: la pagina di stato non mostra dati del cliente.
 - Dopo il deploy: `curl -i https://demo.<LAB_BASE_DOMAIN>/ordine/<43 × A>` → 404.

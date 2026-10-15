@@ -1,7 +1,7 @@
 ---
 giro: 016
 traguardo: T6
-fase: costruzione
+fase: revisione
 inizio: 2026-10-15T14:02:30Z
 ricerca: sì
 accettazione: 78cfb80

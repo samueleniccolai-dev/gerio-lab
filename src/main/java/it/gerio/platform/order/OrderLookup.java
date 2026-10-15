@@ -1,9 +1,17 @@
 package it.gerio.platform.order;
 
+import io.quarkus.panache.common.Sort;
 import it.gerio.platform.catalog.Prices;
+import it.gerio.platform.tenant.CurrentTenant;
+import it.gerio.platform.tenant.ShopProfile;
+import it.gerio.platform.tenant.TenantContext;
 import jakarta.enterprise.context.ApplicationScoped;
+import jakarta.inject.Inject;
 import jakarta.persistence.LockModeType;
+import java.time.format.DateTimeFormatter;
+import java.util.List;
 import java.util.Optional;
+import java.util.regex.Pattern;
 
 /**
  * Finds orders for the Stripe webhook and for the page where the customer comes back. Hibernate
@@ -12,12 +20,38 @@ import java.util.Optional;
 @ApplicationScoped
 public class OrderLookup {
 
+  private static final Pattern TOKEN = Pattern.compile("[A-Za-z0-9_-]{43}");
+  private static final DateTimeFormatter DATE = DateTimeFormatter.ofPattern("dd/MM/yyyy");
+
+  @Inject TenantContext tenantContext;
+  @Inject ShopProfile shopProfile;
+
+  /** One line of the status page, amounts already formatted. */
+  public record StatusLine(String name, int quantity, String unitPrice, String lineTotal) {}
+
+  /** What the status page shows: no personal data of the customer. */
+  public record Status(
+      String number,
+      String statusLabel,
+      boolean expired,
+      String orderDate,
+      String pickupDate,
+      List<StatusLine> lines,
+      String total,
+      String shopPhone,
+      String shopEmail) {}
+
   /** The page reloads itself every 2 seconds up to this many times (30 seconds). */
   static final int MAX_RELOADS = 15;
 
   /** What the outcome page shows: no personal data. {@code nextReload} is null for no reload. */
   public record Outcome(
-      String number, OrderStatus status, long totalCents, String sessionId, Integer nextReload) {
+      String number,
+      OrderStatus status,
+      long totalCents,
+      String sessionId,
+      Integer nextReload,
+      String token) {
     public String total() {
       return Prices.format(totalCents);
     }
@@ -79,8 +113,46 @@ public class OrderLookup {
                   order.status,
                   order.totalCents,
                   order.stripeCheckoutSessionId,
-                  next);
+                  next,
+                  order.publicToken);
             });
+  }
+
+  /**
+   * The status page of the order with this secret token; empty if malformed or not in this shop.
+   */
+  public Optional<Status> status(String token) {
+    if (token == null
+        || !TOKEN.matcher(token).matches()
+        || !(tenantContext.require() instanceof CurrentTenant.Shop shop)) {
+      return Optional.empty();
+    }
+    CustomerOrder order = CustomerOrder.<CustomerOrder>find("publicToken", token).firstResult();
+    if (order == null) {
+      return Optional.empty();
+    }
+    List<StatusLine> lines =
+        OrderItem.<OrderItem>find("orderId", Sort.by("id"), order.getId()).stream()
+            .map(
+                item ->
+                    new StatusLine(
+                        item.nameSnapshot,
+                        item.quantity,
+                        Prices.format(item.unitPriceCents),
+                        Prices.format(item.lineTotalCents)))
+            .toList();
+    Optional<ShopProfile.Info> info = shopProfile.current();
+    return Optional.of(
+        new Status(
+            order.number,
+            order.status.label(),
+            order.status == OrderStatus.EXPIRED,
+            DATE.format(order.getCreatedAt().atZone(shop.timezone())),
+            DATE.format(order.deliveryDate),
+            lines,
+            Prices.format(order.totalCents),
+            info.map(ShopProfile.Info::phone).orElse(null),
+            info.map(ShopProfile.Info::email).orElse(null)));
   }
 
   private static int reloadsSoFar(String n) {

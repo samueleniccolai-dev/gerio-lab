@@ -1,7 +1,7 @@
 ---
 giro: 014
 traguardo: T6
-fase: revisione
+fase: chiusura
 inizio: 2026-10-15T12:18:01Z
 ricerca: sì
 accettazione: 46ec0dc

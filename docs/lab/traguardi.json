@@ -178,9 +178,13 @@
         ],
         "completato": "2026-10-08T20:24:10Z"
       },
-      "stato": "da-fare",
-      "giri": [],
-      "pr": [],
+      "stato": "in-corso",
+      "giri": [
+        "014"
+      ],
+      "pr": [
+        18
+      ],
       "passato_il": null
     },
     {

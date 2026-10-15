@@ -4,7 +4,7 @@ traguardo: T5
 fase: finale
 inizio: 2026-10-15T09:10:56Z
 ricerca: no
-accettazione:
+accettazione: 943e4ac
 ripreso: no
 ---
 # Piano del giro 013 — T5, prova in produzione con Stripe test

@@ -3,14 +3,14 @@
 -- the migrations. Idempotent: every insert upserts on the table's natural key, so
 -- running it again changes nothing.
 
-insert into tenant (id, slug, status, display_name, legal_name, email, phone,
+insert into tenant (id, slug, status, display_name, legal_name, vat_number, email, phone,
                     address_line, postal_code, city, province)
 values ('00000000-0000-0000-0000-0000000de000', 'demo', 'ACTIVE', 'Fioreria Il Glicine',
-        'Il Glicine di Lucia Ferri', 'ciao@glicine.example', '+39 0583 000000',
+        'Il Glicine di Lucia Ferri', 'IT00000000000', 'ciao@glicine.example', '+39 0583 000000',
         'Via dei Fossi 12', '55100', 'Lucca', 'LU')
 on conflict (id) do update set
   slug = excluded.slug, status = excluded.status, display_name = excluded.display_name,
-  legal_name = excluded.legal_name, email = excluded.email, phone = excluded.phone,
+  legal_name = excluded.legal_name, vat_number = excluded.vat_number, email = excluded.email, phone = excluded.phone,
   address_line = excluded.address_line, postal_code = excluded.postal_code,
   city = excluded.city, province = excluded.province, updated_at = now();
 

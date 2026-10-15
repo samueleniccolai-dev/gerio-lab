@@ -1,7 +1,7 @@
 ---
 giro: 013
 traguardo: T5
-fase: revisione
+fase: chiusura
 inizio: 2026-10-15T09:10:56Z
 ricerca: no
 accettazione: 943e4ac

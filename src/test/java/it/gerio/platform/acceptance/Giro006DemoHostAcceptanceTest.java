@@ -222,6 +222,9 @@ class Giro006DemoHostAcceptanceTest {
             code=200
             if [ "$DEFECT" = PRODUCT_TEXT ]; then body='<h1>Prodotto</h1><p>12 rose</p>'
             else body='<h1>Mazzo di rose rosse</h1><p>12 rose</p>'; fi ;;
+          /webhooks/stripe/connect)
+            # Giro 012: the Stripe Connect webhook answers on the base host only.
+            if [ "$host" = "$BASE" ]; then code=400; body='bad signature'; else code=404; fi ;;
           *) unexpected ;;
         esac
       fi

@@ -61,6 +61,7 @@ public class StripeCheckout {
         config
             .secretKey()
             .filter(key -> !key.isBlank())
+            .filter(StripeCheckout::notLive)
             .map(
                 key -> {
                   var builder =
@@ -73,6 +74,14 @@ public class StripeCheckout {
                   return builder.build();
                 })
             .orElse(null);
+  }
+
+  private static boolean notLive(String key) {
+    if (key.startsWith("sk_live_") || key.startsWith("rk_live_")) {
+      LOG.warn("Stripe live key refused: only test keys are accepted, checkout is off");
+      return false;
+    }
+    return true;
   }
 
   /** False without a secret key: the checkout is off. */

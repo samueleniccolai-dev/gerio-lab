@@ -100,7 +100,15 @@ curl -s -o /dev/null -w '%{http_code}\n' https://gerio-lab.samueleniccolai.com/q
 *(da scrivere)*
 
 ## 4. Webhook Stripe che non arrivano o falliscono
-*(da scrivere con il traguardo T5)*
+Passi dell'umano (giro 012, per la prova del giro 013):
+1. Stripe in modalità test, Connect attivo; un account collegato di prova per «Fioreria Il Glicine».
+2. Endpoint webhook Connect sul dominio della piattaforma, `https://<LAB_BASE_DOMAIN>/webhooks/stripe/connect`
+   (sul dominio del demo risponde 404), eventi `checkout.session.completed` e `checkout.session.expired`.
+3. Environment `produzione` di GitHub: segreti `STRIPE_SECRET_KEY` (di test), `STRIPE_CONNECT_WEBHOOK_SECRET`;
+   variabile `DEMO_STRIPE_ACCOUNT_ID`.
+4. In `.github/workflows/consegna.yml` passare le tre variabili al passo di deploy.
+
+*(il resto da scrivere con il traguardo T5)*
 
 ## 5. Email in spam o rimbalzate
 *(da scrivere con il traguardo T6)*

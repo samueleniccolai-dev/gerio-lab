@@ -22,6 +22,11 @@ check() {
   case "$body" in *"Fioreria Il Glicine"*) ;; *) echo "demo catalog: shop name missing" >&2; return 1 ;; esac
   body=$(curl -fsS -m 10 "$demo/prodotti/rose-rosse") || return 1
   case "$body" in *"Mazzo di rose rosse"*) ;; *) echo "demo product: name missing" >&2; return 1 ;; esac
+  case "$(code -X POST "$base/webhooks/stripe/connect")" in
+    400|503) ;;
+    *) echo "webhook route unexpected on $base" >&2; return 1 ;;
+  esac
+  [ "$(code -X POST "$demo/webhooks/stripe/connect")" = "404" ] || { echo "webhook route is open on the demo host" >&2; return 1; }
   for host in "$LAB_BASE_DOMAIN" "demo.${LAB_BASE_DOMAIN}"; do
     headers=$(curl -sI -m 10 "https://${host}/") || return 1
     printf '%s' "$headers" | grep -qi '^strict-transport-security:' || { echo "HSTS missing on $host" >&2; return 1; }

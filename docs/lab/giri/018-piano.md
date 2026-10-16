@@ -1,10 +1,10 @@
 ---
 giro: 018
 traguardo: T8
-fase: accettazione
+fase: costruzione
 inizio: 2026-10-16T10:12:04Z
 ricerca: sì
-accettazione: Giro018LegalFooterAcceptanceTest, Giro018LegalPagesAcceptanceTest, Giro018LegalIsolationAcceptanceTest
+accettazione: 9fe38f4
 ripreso: no
 ---
 # Piano del giro 018 — T8: pagine legali minime e piè di pagina completo

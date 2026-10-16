@@ -146,6 +146,8 @@ l'invio è **spento** finché `GERIO_MAIL_ENABLED` non è `true`.
    `infra/deploy.sh` le legge dall'ambiente, tutte facoltative; i segreti viaggiano su stdin, il resto
    come argomenti (contratto: `infra/README.md`). Non sono mai stampati.
 5. Un deploy (merge su `main` o `consegna` a mano) le porta nel `.env` del server e ad `app`.
+   Un valore già scritto nel `.env` del server non si toglie togliendo il segreto o la variabile da
+   GitHub (il deploy scrive solo i valori presenti). Per spegnere l'invio imposta `GERIO_MAIL_ENABLED=false`.
 
 **Verifica:** fai un ordine di prova con la carta `4242 4242 4242 4242` (§4), con un'email tua. Poi:
 ```sql

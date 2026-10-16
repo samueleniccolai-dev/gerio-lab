@@ -97,8 +97,13 @@ class MailInfraTest {
     JsonPath c = compose(Map.of());
     assertEquals("false", c.getString("services.app.environment.GERIO_MAIL_ENABLED"));
     assertEquals("587", c.getString("services.app.environment.GERIO_SMTP_PORT"));
-    for (String n :
-        List.of("GERIO_SMTP_HOST", "GERIO_SMTP_USER", "GERIO_SMTP_PASSWORD", "GERIO_MAIL_FROM")) {
+    // Host and from must never be empty: SmallRye does not apply the default of an empty variable.
+    for (JsonPath j : List.of(c, compose(Map.of("GERIO_SMTP_HOST", "", "GERIO_MAIL_FROM", "")))) {
+      assertEquals("localhost", j.getString("services.app.environment.GERIO_SMTP_HOST"));
+      assertEquals(
+          "ordini@lab.example.invalid", j.getString("services.app.environment.GERIO_MAIL_FROM"));
+    }
+    for (String n : List.of("GERIO_SMTP_USER", "GERIO_SMTP_PASSWORD")) {
       assertEquals("", c.getString("services.app.environment." + n), n);
     }
     JsonPath set =
@@ -113,6 +118,114 @@ class MailInfraTest {
     assertEquals("smtp-relay.brevo.com", set.getString("services.app.environment.GERIO_SMTP_HOST"));
     assertEquals(
         "ordini@example.invalid", set.getString("services.app.environment.GERIO_MAIL_FROM"));
+  }
+
+  private static final List<String> SECRETS =
+      List.of(
+          "tok-ghcr-0001", "sk-stripe-0002", "whsec-0003", "centinaio-u-0004", "centinaio-p-0005");
+
+  @Test
+  void deployKeepsSecretsOutOfSshArgumentsAndSendsThemInOrderOnStdin() throws Exception {
+    Path dir = Files.createTempDirectory("mail-deploy");
+    Path bin = Files.createDirectory(dir.resolve("bin"));
+    for (String tool : List.of("ssh", "scp")) {
+      Path f = bin.resolve(tool);
+      Files.writeString(
+          f,
+          "#!/usr/bin/env bash\nprintf '%s\\n' \"$@\" >> \""
+              + dir
+              + "/"
+              + tool
+              + ".argv\"\ncat >> \""
+              + dir
+              + "/"
+              + tool
+              + ".stdin\"\n");
+      f.toFile().setExecutable(true);
+    }
+    Map<String, String> env = new java.util.HashMap<>();
+    env.put("PATH", bin + ":" + System.getenv("PATH"));
+    env.put("DEPLOY_HOST", "h.example.invalid");
+    env.put("DEPLOY_USER", "deploy");
+    env.put("DEPLOY_SSH_KEY", "fake-key");
+    env.put("DEPLOY_KNOWN_HOSTS", "fake-known-hosts");
+    env.put("LAB_BASE_DOMAIN", "lab.example.invalid");
+    env.put("GHCR_USER", "ghuser");
+    env.put("GHCR_TOKEN", SECRETS.get(0));
+    env.put("STRIPE_SECRET_KEY", SECRETS.get(1));
+    env.put("STRIPE_CONNECT_WEBHOOK_SECRET", SECRETS.get(2));
+    env.put("GERIO_SMTP_USER", SECRETS.get(3));
+    env.put("GERIO_SMTP_PASSWORD", SECRETS.get(4));
+    env.put("GERIO_SMTP_PORT", "587");
+    Result r = run(env, "infra/deploy.sh", IMAGE);
+    assertEquals(0, r.exitCode(), r.stderr());
+    String argv =
+        Files.readString(dir.resolve("ssh.argv")) + Files.readString(dir.resolve("scp.argv"));
+    for (String secret : SECRETS) {
+      assertFalse(argv.contains(secret), "secret value in argv: " + secret);
+    }
+    assertFalse(argv.contains("GERIO_SMTP_"), "variable name in argv");
+    assertEquals(SECRETS, Files.readAllLines(dir.resolve("ssh.stdin")));
+  }
+
+  @Test
+  void remoteReadsUserBeforePasswordAndValidatesThePort() throws Exception {
+    Path root = Files.createTempDirectory("mail-remote");
+    Path bin = Files.createDirectory(root.resolve("bin"));
+    Path docker = bin.resolve("docker");
+    Files.writeString(
+        docker, "#!/usr/bin/env bash\necho '" + IMAGE.substring(IMAGE.indexOf('@') + 1) + "'\n");
+    docker.toFile().setExecutable(true);
+    Path flock = bin.resolve("flock");
+    Files.writeString(flock, "#!/usr/bin/env bash\nexit 0\n");
+    flock.toFile().setExecutable(true);
+    Path script = root.resolve("remote.sh");
+    Files.writeString(
+        script, read("remote.sh").replace("ROOT=/opt/gerio-lab", "ROOT=\"" + root + "\""));
+    Files.writeString(root.resolve(".env"), "DB_PASSWORD=x\n");
+    Files.createDirectory(root.resolve("incoming"));
+    for (String f : List.of("docker-compose.yml", "Caddyfile", "remote.sh")) {
+      Files.writeString(root.resolve("incoming").resolve(f), "# fake\n");
+    }
+    String path = bin + ":" + System.getenv("PATH");
+    String stdin = "ghcr-t\nstripe-k\nwhsec\nthe-user-0006\nthe-pass-0007\n";
+
+    Result bad = runRemote(script, path, stdin, "70000");
+    assertEquals(2, bad.exitCode(), bad.stderr());
+    assertTrue(bad.stderr().contains("GERIO_SMTP_PORT"), bad.stderr());
+    assertEquals(2, runRemote(script, path, stdin, "0").exitCode());
+
+    Result ok = runRemote(script, path, stdin, "2525");
+    assertEquals(0, ok.exitCode(), ok.stderr());
+    List<String> env = Files.readAllLines(root.resolve(".env"));
+    assertTrue(env.contains("GERIO_SMTP_USER=the-user-0006"), env.toString());
+    assertTrue(env.contains("GERIO_SMTP_PASSWORD=the-pass-0007"), env.toString());
+    assertTrue(env.contains("GERIO_SMTP_PORT=2525"), env.toString());
+  }
+
+  private static Result runRemote(Path script, String path, String stdin, String port)
+      throws Exception {
+    ProcessBuilder pb =
+        new ProcessBuilder(
+            "bash",
+            script.toString(),
+            "deploy",
+            IMAGE,
+            "lab.example.invalid",
+            "ghuser",
+            "",
+            "smtp.example.invalid",
+            port,
+            "ordini@example.invalid",
+            "true");
+    pb.environment().put("PATH", path);
+    Process p = pb.start();
+    p.getOutputStream().write(stdin.getBytes(StandardCharsets.UTF_8));
+    p.getOutputStream().close();
+    String out = new String(p.getInputStream().readAllBytes(), StandardCharsets.UTF_8);
+    String err = new String(p.getErrorStream().readAllBytes(), StandardCharsets.UTF_8);
+    assertTrue(p.waitFor(60, TimeUnit.SECONDS), "timeout");
+    return new Result(p.exitValue(), err, out);
   }
 
   private static JsonPath compose(Map<String, String> env) throws Exception {

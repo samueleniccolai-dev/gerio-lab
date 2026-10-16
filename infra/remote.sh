@@ -53,7 +53,7 @@ deploy() {
     echo "invalid GERIO_MAIL_FROM" >&2
     exit 2
   fi
-  if [ -n "$smtp_port" ] && ! [[ "$smtp_port" =~ ^[0-9]{1,5}$ ]]; then
+  if [ -n "$smtp_port" ] && ! { [[ "$smtp_port" =~ ^[0-9]{1,5}$ ]] && [ "$((10#$smtp_port))" -ge 1 ] && [ "$((10#$smtp_port))" -le 65535 ]; }; then
     echo "invalid GERIO_SMTP_PORT" >&2
     exit 2
   fi

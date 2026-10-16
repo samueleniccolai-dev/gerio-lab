@@ -61,6 +61,12 @@ public class Tenant extends AuditedEntity {
 
   public String city;
 
+  public String province;
+
+  public String pec;
+
+  public String rea;
+
   @Column(name = "stripe_account_id")
   public String stripeAccountId;
 

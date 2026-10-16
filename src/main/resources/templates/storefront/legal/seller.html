@@ -1,0 +1,13 @@
+{#include storefront/layout}
+  {#title}Informazioni sul venditore · {shopName}{/title}
+  {#body}
+    <h1>Informazioni sul venditore</h1>
+    <p>{seller.legalName}</p>
+    {#if seller.addressLine}<p>Sede: {seller.addressLine}, {seller.postalCode} {seller.city}{#if seller.province} ({seller.province}){/if}</p>{/if}
+    {#if seller.vatNumber}<p>P. IVA {seller.vatNumber}</p>{/if}
+    {#if seller.rea}<p>REA {seller.rea}</p>{/if}
+    {#if seller.email}<p>Email: {seller.email}</p>{/if}
+    {#if seller.pec}<p>PEC: {seller.pec}</p>{/if}
+    {#if seller.phone}<p>Telefono: {seller.phone}</p>{/if}
+  {/body}
+{/include}

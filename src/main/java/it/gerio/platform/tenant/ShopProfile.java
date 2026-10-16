@@ -27,6 +27,9 @@ public class ShopProfile {
       String addressLine,
       String postalCode,
       String city,
+      String province,
+      String pec,
+      String rea,
       String orderCutoff,
       String whatsapp) {
 
@@ -72,6 +75,9 @@ public class ShopProfile {
             tenant.addressLine,
             tenant.postalCode,
             tenant.city,
+            tenant.province,
+            tenant.pec,
+            tenant.rea,
             settings[0],
             settings[1]));
   }

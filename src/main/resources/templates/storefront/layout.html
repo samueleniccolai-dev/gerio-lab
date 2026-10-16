@@ -10,5 +10,13 @@
   <main>
     {#insert body /}
   </main>
+  {#let s=inject:sellerFooter.info}
+  <footer>
+    {#if s}
+    <p>{s.legalName}{#if s.addressLine} · {s.addressLine}{/if}{#if s.city} · {s.postalCode} {s.city}{#if s.province} ({s.province}){/if}{/if}{#if s.vatNumber} · P. IVA {s.vatNumber}{/if}{#if s.email} · {s.email}{/if}{#if s.phone} · {s.phone}{/if}</p>
+    {/if}
+    <p><a href="/informazioni-venditore">Informazioni sul venditore</a> · <a href="/condizioni-di-vendita">Condizioni di vendita</a> · <a href="/privacy">Privacy</a> · <a href="/cookie">Cookie</a> · <a href="/accessibilita">Accessibilità</a></p>
+  </footer>
+  {/let}
 </body>
 </html>

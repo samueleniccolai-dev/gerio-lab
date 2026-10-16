@@ -1,7 +1,7 @@
 ---
 giro: 017
 traguardo: T7
-fase: revisione
+fase: chiusura
 inizio: 2026-10-16T09:31:01Z
 ricerca: sì
 accettazione: 4274ce0

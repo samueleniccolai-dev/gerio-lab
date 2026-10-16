@@ -178,18 +178,20 @@
         ],
         "completato": "2026-10-08T20:24:10Z"
       },
-      "stato": "in-corso",
+      "stato": "passato",
       "giri": [
         "014",
         "015",
-        "016"
+        "016",
+        "019"
       ],
       "pr": [
         18,
         19,
-        20
+        20,
+        24
       ],
-      "passato_il": null
+      "passato_il": "2026-10-16T11:58:57Z"
     },
     {
       "id": "T7",

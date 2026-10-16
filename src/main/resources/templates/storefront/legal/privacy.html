@@ -1,0 +1,23 @@
+{#include storefront/layout}
+  {#title}Informativa sulla privacy · {shopName}{/title}
+  {#body}
+    <h1>Informativa sulla privacy</h1>
+    <h2>Titolare del trattamento</h2>
+    <p>{seller.legalName}{#if seller.email}, email {seller.email}{/if}. Questa informativa è resa ai sensi degli artt. 13 e 14 del Regolamento (UE) 2016/679 (GDPR).</p>
+    <h2>Dati trattati</h2>
+    <p>Dati del cliente: nome, email e telefono. Dati del destinatario, se diverso dal cliente: nome, indirizzo di consegna e telefono, che il cliente ci comunica per consegnare l'ordine. Il cliente informa il destinatario. I dati di carta sono trattati solo da Stripe: non passano dal nostro sito.</p>
+    <h2>Finalità e basi giuridiche (art. 6 GDPR)</h2>
+    <ul>
+      <li>Eseguire l'ordine e la consegna: esecuzione del contratto (art. 6, par. 1, lett. b).</li>
+      <li>Tenere la contabilità e gli obblighi fiscali: obbligo di legge (art. 6, par. 1, lett. c).</li>
+    </ul>
+    <h2>Conservazione</h2>
+    <p>Dati contabili e fiscali: 10 anni. Dati di consegna (indirizzo e telefono del destinatario): 12 mesi dalla consegna, poi sono anonimizzati.</p>
+    <h2>Destinatari dei dati</h2>
+    <p>Stripe, per il pagamento; il servizio email, per inviare la conferma dell'ordine; il fornitore dell'hosting. Non vendiamo i dati e non li usiamo per profilazione.</p>
+    <h2>Diritti</h2>
+    <p>Puoi chiedere accesso, rettifica, cancellazione, limitazione e portabilità dei dati, e esercitare il diritto di opposizione al trattamento{#if seller.email}, scrivendo a {seller.email}{/if}.</p>
+    <h2>Reclamo</h2>
+    <p>Puoi proporre reclamo al Garante per la protezione dei dati personali (www.garanteprivacy.it).</p>
+  {/body}
+{/include}

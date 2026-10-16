@@ -230,10 +230,14 @@
         "pr": [],
         "completato": null
       },
-      "stato": "da-fare",
-      "giri": [],
-      "pr": [],
-      "passato_il": null
+      "stato": "passato",
+      "giri": [
+        "018"
+      ],
+      "pr": [
+        23
+      ],
+      "passato_il": "2026-10-16T10:37:52Z"
     }
   ],
   "gerio_fuori_piano": [

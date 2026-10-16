@@ -31,7 +31,8 @@ Variabili d'ambiente che `consegna` passa agli script (mai stamparle):
 
 Contratto per `consegna`: `deploy.sh` legge dall'ambiente le sei variabili `GERIO_*` con questi nomi,
 tutte facoltative. Compose le passa ad `app` con default `GERIO_MAIL_ENABLED=false` e
-`GERIO_SMTP_PORT=587`; le altre vuote (l'app tratta una variabile vuota come mancante e usa i suoi default).
+`GERIO_SMTP_PORT=587`, `GERIO_SMTP_HOST=localhost` e `GERIO_MAIL_FROM=ordini@<dominio>`; utente e password vuoti.
+Una variabile vuota NON fa scattare i default dell'app (SRCFG00040): per questo il compose ha default non vuoti.
 
 Regole:
 - Tutto ciò che sta in `infra/` è un percorso protetto: le PR che lo toccano vanno sempre in

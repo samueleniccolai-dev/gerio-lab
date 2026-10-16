@@ -11,16 +11,16 @@ modello_revisore: sonnet
 ricerca_fonti: 7
 critico_da_correggere: 3
 critico_accolti: 3
-revisore_bloccanti: 0
+revisore_bloccanti: 1
 revisore_dubbi: 2
 dubbi_corretti: 0
 fuori_perimetro: 0
 mutazioni_provate: 3
 mutazioni_prese: 2
 verify_rossi_locali: 1
-test_totali: 385
-test_delta: 11
-decisioni_registro: 3
+test_totali: 391
+test_delta: 17
+decisioni_registro: 6
 decisioni_ratifica: 1
 porte_senso_unico: 1
 riparazioni: 0
@@ -41,6 +41,8 @@ difetto_di:
 - Java 25 con openhtmltopdf: provato dal `verify` (385 test verdi in copia isolata).
 - T6 resta `in-corso`: manca il provider SMTP UE (azione tua); finché manca, le conferme restano `PENDING`.
 - In locale `verify` aveva 1 rosso (`caddyAdapts…`): Docker Hub 429 sul pull di `caddy`, ambiente e non codice; il revisore l'ha trovato verde.
+- **Aggiunto su tua richiesta:** cablaggio SMTP/Brevo in `infra/` (deploy.sh, remote.sh, compose, env.example, runbook §5). Il revisore ha trovato un bloccante (host e mittente vuoti nel compose fermavano l'app, SRCFG00040): corretto in 9e1da80 e riverificato con l'app vera.
+- **Resta a te:** le sei righe in `.github/workflows/consegna.yml` (contratto in `infra/README.md`); senza, le variabili non arrivano al server.
 - Prossimo: giro 017 su T7.
 
 ## Cosa funziona ora — con la prova
@@ -53,10 +55,14 @@ difetto_di:
 - Cache del PDF non invalidata se il profilo cambia (serve con il back-office).
 - Il PDF si genera dentro la transazione `REQUIRES_NEW` del composer alla prima volta per negozio (solo lettura, più lunga); si può scaldare la cache fuori.
 - Art. 49 Codice del consumo non verificato.
+- `consegna.yml` non passa ancora le variabili di posta (protetto).
+- Un `$` dentro un segreto verrebbe alterato nel `.env` (vale già per Stripe; le chiavi Brevo non lo contengono).
+- Un valore scritto nel `.env` del server non si toglie togliendo il segreto da GitHub: per spegnere l'invio, `GERIO_MAIL_ENABLED=false`.
 
 ## Verdetto del revisore
 - **BLOCCANTI:** 0 · **DUBBI:** 2 (cache e transazione, sopra) · **PERIMETRO:** solo `pom.xml`, previsto.
-- VERDETTO finale: {"sha": "838dfc4275676afd7d803d3cabf4a9ca2e98a6bd", "bloccanti": 0, "dubbi": 2, "fuori_perimetro": 0, "mutazioni_provate": 3, "mutazioni_prese": 2, "test_totali": 385}
+- Cablaggio infra: primo VERDETTO su e47a99a con 1 bloccante (compose con valori vuoti), corretto; ultimo VERDETTO: {"sha": "9e1da80e61c612e1a485fce7399fb11c0f01cbd3", "bloccanti": 0, "dubbi": 0, "fuori_perimetro": 0, "mutazioni_provate": 3, "mutazioni_prese": 3, "test_totali": 391}
+- Parte condizioni di vendita: VERDETTO su 838dfc4, 0 bloccanti, 2 dubbi.
 
 ## Ricerca e critica
 Ricerca: 7 fonti, `docs/lab/giri/016-ricerca.md`. Critica: 3 punti DA CORREGGERE, tutti accolti, più i facoltativi.

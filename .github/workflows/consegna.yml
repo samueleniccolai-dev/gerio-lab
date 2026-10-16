@@ -308,6 +308,12 @@ jobs:
           STRIPE_SECRET_KEY: ${{ secrets.STRIPE_SECRET_KEY }}
           STRIPE_CONNECT_WEBHOOK_SECRET: ${{ secrets.STRIPE_CONNECT_WEBHOOK_SECRET }}
           DEMO_STRIPE_ACCOUNT_ID: ${{ vars.DEMO_STRIPE_ACCOUNT_ID }}
+          GERIO_SMTP_USER:     ${{ secrets.GERIO_SMTP_USER }}
+          GERIO_SMTP_PASSWORD: ${{ secrets.GERIO_SMTP_PASSWORD }}
+          GERIO_SMTP_HOST:     ${{ vars.GERIO_SMTP_HOST }}
+          GERIO_SMTP_PORT:     ${{ vars.GERIO_SMTP_PORT }}
+          GERIO_MAIL_FROM:     ${{ vars.GERIO_MAIL_FROM }}
+          GERIO_MAIL_ENABLED:  ${{ vars.GERIO_MAIL_ENABLED }}
         run: |
           if [ ! -x infra/deploy.sh ]; then
             echo "esito=saltato" >> "$GITHUB_OUTPUT"

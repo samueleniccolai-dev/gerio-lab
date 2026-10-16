@@ -72,3 +72,22 @@ join product p
 on conflict (product_id, name) do update set
   price_cents = excluded.price_cents, active = excluded.active,
   position = excluded.position, updated_at = now();
+
+-- Orders close at 12:00 shop time; the WhatsApp number is invented (giro 017).
+update tenant
+set settings = settings || '{"orderCutoff": "12:00", "whatsapp": "+393330000000"}'::jsonb
+where id = '00000000-0000-0000-0000-0000000de000';
+
+-- Delivery zones, inserted in this order (ids rise: the first zone wins on a shared postal code).
+insert into delivery_zone (tenant_id, name, postal_codes, municipalities, fee_cents,
+                           min_order_cents, active)
+values ('00000000-0000-0000-0000-0000000de000', 'Lucca centro', array['55100'],
+        array['Lucca'], 500, 2500, true),
+       ('00000000-0000-0000-0000-0000000de000', 'Capannori e Porcari', array['55012', '55016'],
+        array['Capannori', 'Porcari'], 900, 3500, true),
+       ('00000000-0000-0000-0000-0000000de000', 'Versilia', array['55049'],
+        array['Viareggio'], 1500, 5000, false)
+on conflict (tenant_id, name) do update set
+  postal_codes = excluded.postal_codes, municipalities = excluded.municipalities,
+  fee_cents = excluded.fee_cents, min_order_cents = excluded.min_order_cents,
+  active = excluded.active, updated_at = now();

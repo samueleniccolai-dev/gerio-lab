@@ -29,6 +29,14 @@ services:
       STRIPE_SECRET_KEY: ${STRIPE_SECRET_KEY:-}
       STRIPE_CONNECT_WEBHOOK_SECRET: ${STRIPE_CONNECT_WEBHOOK_SECRET:-}
       DEMO_STRIPE_ACCOUNT_ID: ${DEMO_STRIPE_ACCOUNT_ID:-}
+      # Mail (Brevo SMTP). Explicit defaults: sending stays off and the port stays 587 when unset.
+      # Host and from may be empty: the app treats an empty variable as missing (its default applies).
+      GERIO_MAIL_ENABLED: ${GERIO_MAIL_ENABLED:-false}
+      GERIO_SMTP_HOST: ${GERIO_SMTP_HOST:-}
+      GERIO_SMTP_PORT: ${GERIO_SMTP_PORT:-587}
+      GERIO_SMTP_USER: ${GERIO_SMTP_USER:-}
+      GERIO_SMTP_PASSWORD: ${GERIO_SMTP_PASSWORD:-}
+      GERIO_MAIL_FROM: ${GERIO_MAIL_FROM:-}
     healthcheck:
       test: ["CMD", "curl", "-fsS", "http://localhost:8080/q/health/ready"]
       interval: 10s

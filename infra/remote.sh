@@ -1,7 +1,8 @@
 #!/usr/bin/env bash
 # Runs ON THE SERVER. Usage:
-#   remote.sh deploy <image@sha256:...> <lab-domain> <ghcr-user> [demo-account]
-#     stdin, one per line: GHCR token, Stripe secret key, Connect webhook secret (empty = unset)
+#   remote.sh deploy <image@sha256:...> <lab-domain> <ghcr-user> [demo-account [smtp-host smtp-port mail-from mail-enabled]]
+#     stdin, one per line: GHCR token, Stripe secret key, Connect webhook secret, SMTP user,
+#     SMTP secret (empty or missing = unset)
 #   remote.sh rollback
 # Everything runs under one flock, rollback included.
 set -euo pipefail
@@ -37,10 +38,29 @@ start_and_verify() {
 
 deploy() {
   local image="$1" domain="$2" ghcr_user="$3" demo_account="${4:-}"
-  local ghcr_token="" stripe_key="" webhook_secret=""
+  local smtp_host="${5:-}" smtp_port="${6:-}" mail_from="${7:-}" mail_enabled="${8:-}"
+  local ghcr_token="" stripe_key="" webhook_secret="" smtp_user="" smtp_pass=""
   IFS= read -r ghcr_token || true
   IFS= read -r stripe_key || true
   IFS= read -r webhook_secret || true
+  IFS= read -r smtp_user || true
+  IFS= read -r smtp_pass || true
+  if [ -n "$smtp_host" ] && ! [[ "$smtp_host" =~ ^[A-Za-z0-9.@_+-]+$ ]]; then
+    echo "invalid GERIO_SMTP_HOST" >&2
+    exit 2
+  fi
+  if [ -n "$mail_from" ] && ! [[ "$mail_from" =~ ^[A-Za-z0-9.@_+-]+$ ]]; then
+    echo "invalid GERIO_MAIL_FROM" >&2
+    exit 2
+  fi
+  if [ -n "$smtp_port" ] && ! [[ "$smtp_port" =~ ^[0-9]{1,5}$ ]]; then
+    echo "invalid GERIO_SMTP_PORT" >&2
+    exit 2
+  fi
+  if [ -n "$mail_enabled" ] && [ "$mail_enabled" != true ] && [ "$mail_enabled" != false ]; then
+    echo "invalid GERIO_MAIL_ENABLED" >&2
+    exit 2
+  fi
   if [ -n "$demo_account" ] && ! [[ "$demo_account" =~ ^acct_[A-Za-z0-9]+$ ]]; then
     echo "invalid DEMO_STRIPE_ACCOUNT_ID" >&2
     exit 2
@@ -70,6 +90,12 @@ deploy() {
   [ -z "$stripe_key" ] || set_env STRIPE_SECRET_KEY "$stripe_key"
   [ -z "$webhook_secret" ] || set_env STRIPE_CONNECT_WEBHOOK_SECRET "$webhook_secret"
   [ -z "$demo_account" ] || set_env DEMO_STRIPE_ACCOUNT_ID "$demo_account"
+  [ -z "$smtp_user" ] || set_env GERIO_SMTP_USER "$smtp_user"
+  [ -z "$smtp_pass" ] || set_env GERIO_SMTP_PASSWORD "$smtp_pass"
+  [ -z "$smtp_host" ] || set_env GERIO_SMTP_HOST "$smtp_host"
+  [ -z "$smtp_port" ] || set_env GERIO_SMTP_PORT "$smtp_port"
+  [ -z "$mail_from" ] || set_env GERIO_MAIL_FROM "$mail_from"
+  [ -z "$mail_enabled" ] || set_env GERIO_MAIL_ENABLED "$mail_enabled"
   mv "$ROOT/incoming/docker-compose.yml" "$ROOT/docker-compose.yml"
   cat "$ROOT/incoming/Caddyfile" > "$ROOT/Caddyfile"
   rm -f "$ROOT/incoming/Caddyfile"
@@ -97,8 +123,8 @@ rollback() {
 }
 
 case "${1:-}" in
-  deploy) { [ "$#" -eq 4 ] || [ "$#" -eq 5 ]; } || { echo "usage: remote.sh deploy <image> <domain> <user> [demo-account]" >&2; exit 2; }
-          deploy "$2" "$3" "$4" "${5:-}" ;;
+  deploy) { [ "$#" -eq 4 ] || [ "$#" -eq 5 ] || [ "$#" -eq 9 ]; } || { echo "usage: remote.sh deploy <image> <domain> <user> [demo-account [smtp-host smtp-port mail-from mail-enabled]]" >&2; exit 2; }
+          deploy "$2" "$3" "$4" "${5:-}" "${6:-}" "${7:-}" "${8:-}" "${9:-}" ;;
   rollback) rollback ;;
   *) echo "usage: remote.sh deploy|rollback" >&2; exit 2 ;;
 esac

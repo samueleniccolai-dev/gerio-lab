@@ -26,6 +26,12 @@ Variabili d'ambiente che `consegna` passa agli script (mai stamparle):
 | `GHCR_USER`, `GHCR_TOKEN` | credenziali del run, solo lettura dei pacchetti, scadono a fine job: servono al server per `docker login ghcr.io` e `docker pull` |
 | `STRIPE_SECRET_KEY`, `STRIPE_CONNECT_WEBHOOK_SECRET` | opzionali, segreti dell'environment `produzione`: chiave segreta (o limitata) **di test** di Stripe e segreto del webhook Connect. Viaggiano su stdin con il token GHCR (tre righe, vuota = assente) e finiscono nel `.env` del server (600). Una chiave live è rifiutata dall'app. |
 | `DEMO_STRIPE_ACCOUNT_ID` | opzionale, variabile: account collegato di prova del demo (`acct_` + lettere e cifre, altrimenti uscita 2). Non è un segreto: va come quinto argomento a `remote.sh` |
+| `GERIO_SMTP_USER`, `GERIO_SMTP_PASSWORD` | opzionali, segreti di `produzione` (Brevo SMTP). Su stdin dopo i tre segreti sopra (righe 4 e 5; vuota o mancante = non impostato). Mai nel comando ssh. |
+| `GERIO_SMTP_HOST`, `GERIO_SMTP_PORT`, `GERIO_MAIL_FROM`, `GERIO_MAIL_ENABLED` | opzionali, variabili di `produzione`, non segrete: argomenti 6-9 di `remote.sh` (dopo l'account demo). `deploy.sh` li valida prima di tutto (uscita 2): host e from solo `A-Za-z0-9.@_+-`, porta 1-65535, enabled `true` o `false`. `remote.sh` li riconvalida e scrive nel `.env` solo i non vuoti. |
+
+Contratto per `consegna`: `deploy.sh` legge dall'ambiente le sei variabili `GERIO_*` con questi nomi,
+tutte facoltative. Compose le passa ad `app` con default `GERIO_MAIL_ENABLED=false` e
+`GERIO_SMTP_PORT=587`; le altre vuote (l'app tratta una variabile vuota come mancante e usa i suoi default).
 
 Regole:
 - Tutto ciò che sta in `infra/` è un percorso protetto: le PR che lo toccano vanno sempre in

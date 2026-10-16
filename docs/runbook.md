@@ -115,6 +115,7 @@ Passi dell'umano (giro 012, per la prova del giro 013):
 Prova con la carta di test (a mano, mai nello smoke: crea un ordine vero `PENDING_PAYMENT`):
 1. `infra/prova-stripe.sh demo.<LAB_BASE_DOMAIN>` porta un carrello demo (104,80 €, ritiro in negozio) fino a
    Stripe Checkout e stampa solo l'URL. Exit 1 con «checkout spento» = chiavi Stripe o account collegato mancanti.
+   Dopo le 12:00 (ora di Roma) il ritiro per oggi è chiuso (orario limite del demo): lo script deve usare una data da domani, o va lanciato prima delle 12:00.
 2. L'URL va in un commento della PR: **è pubblico** e vale 24 ore, poi la sessione scade. Dati solo inventati.
 3. Paga con la carta `4242 4242 4242 4242`, scadenza futura e CVC qualsiasi.
 4. `infra/prova-stripe.sh esito demo.<LAB_BASE_DOMAIN> <url>` chiede l'esito fino a 15 volte, ogni 2 s, e stampa il

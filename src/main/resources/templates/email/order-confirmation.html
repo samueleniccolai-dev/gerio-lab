@@ -12,9 +12,10 @@
     {/for}
     </tbody>
   </table>
+  {#if order.delivery}<p>Consegna: {order.deliveryFee}</p>{/if}
   <p>Totale (IVA inclusa): <strong>{order.total}</strong></p>
   <p>Pagamento: Carta</p>
-  <p>Ritiro in negozio: {order.pickupDate}</p>
+  {#if order.delivery}<p>Consegna a domicilio: {order.pickupDate}</p>{#else}<p>Ritiro in negozio: {order.pickupDate}</p>{/if}
   <p>Puoi seguire l'ordine qui: <a href="{link}">{link}</a></p>
   <p>Le condizioni di vendita (versione {order.termsVersion}) sono in allegato.</p>
   <h2>Venditore</h2>

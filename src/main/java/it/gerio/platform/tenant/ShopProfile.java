@@ -2,6 +2,7 @@ package it.gerio.platform.tenant;
 
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
+import jakarta.persistence.EntityManager;
 import java.util.Optional;
 
 /**
@@ -25,7 +26,9 @@ public class ShopProfile {
       String vatNumber,
       String addressLine,
       String postalCode,
-      String city) {
+      String city,
+      String orderCutoff,
+      String whatsapp) {
 
     /** The payment can be started only on a connected account that can receive charges. */
     public boolean canCharge() {
@@ -34,6 +37,20 @@ public class ShopProfile {
   }
 
   @Inject TenantContext tenantContext;
+  @Inject EntityManager entityManager;
+
+  // Two keys of tenant.settings (jsonb), read by hand: the column is not mapped in Tenant.
+  private String[] settings(String tenantId) {
+    Object[] row =
+        (Object[])
+            entityManager
+                .createNativeQuery(
+                    "select settings->>'orderCutoff', settings->>'whatsapp'"
+                        + " from tenant where id = ?1")
+                .setParameter(1, tenantId)
+                .getSingleResult();
+    return new String[] {(String) row[0], (String) row[1]};
+  }
 
   public Optional<Info> current() {
     if (!(tenantContext.require() instanceof CurrentTenant.Shop shop)) {
@@ -43,6 +60,7 @@ public class ShopProfile {
     if (tenant == null) {
       return Optional.empty();
     }
+    String[] settings = settings(shop.id());
     return Optional.of(
         new Info(
             tenant.phone,
@@ -53,6 +71,8 @@ public class ShopProfile {
             tenant.vatNumber,
             tenant.addressLine,
             tenant.postalCode,
-            tenant.city));
+            tenant.city,
+            settings[0],
+            settings[1]));
   }
 }

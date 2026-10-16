@@ -93,6 +93,9 @@ public final class TestShops {
       statement.execute(
           "do $$ begin if to_regclass('outbox_message') is not null then"
               + " execute 'delete from outbox_message'; end if; end $$");
+      statement.execute(
+          "do $$ begin if to_regclass('delivery_zone') is not null then"
+              + " execute 'delete from delivery_zone'; end if; end $$");
       statement.execute("delete from tenant");
     }
   }

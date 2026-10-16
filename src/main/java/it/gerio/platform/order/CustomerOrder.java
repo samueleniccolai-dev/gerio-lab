@@ -60,6 +60,27 @@ public class CustomerOrder extends TenantScopedEntity {
   @Column(name = "delivery_date", nullable = false, updatable = false)
   public LocalDate deliveryDate;
 
+  @Column(name = "recipient_name", updatable = false)
+  public String recipientName;
+
+  @Column(name = "recipient_phone", updatable = false)
+  public String recipientPhone;
+
+  @Column(name = "address_line", updatable = false)
+  public String addressLine;
+
+  @Column(name = "postal_code", updatable = false)
+  public String postalCode;
+
+  @Column(updatable = false)
+  public String city;
+
+  @Column(name = "delivery_notes", updatable = false)
+  public String deliveryNotes;
+
+  @Column(name = "zone_id", updatable = false)
+  public Long zoneId;
+
   @Column(name = "subtotal_cents", nullable = false, updatable = false)
   public long subtotalCents;
 

@@ -16,7 +16,7 @@
       {/for}
     </ul>
     <p>Totale: <strong>{page.cart.total}</strong></p>
-    <p>IVA inclusa. Ritiro in negozio, nessun costo di consegna.</p>
+    <p>IVA inclusa. Il costo della consegna a domicilio, se la scegli, si aggiunge al totale.</p>
     {#if page.canPay}
     <form method="post" action="/checkout">
       <input type="hidden" name="{inject:csrf.parameterName}" value="{inject:csrf.token}">
@@ -35,8 +35,63 @@
         <input id="customerPhone" type="tel" name="customerPhone" value="{form.phone}" maxlength="40">
         {#if errors.containsKey('customerPhone')}<span role="alert">{errors.get('customerPhone')}</span>{/if}
       </p>
+      <fieldset>
+        <legend>Come vuoi ricevere l'ordine</legend>
+        <label><input type="radio" name="fulfillmentType" value="PICKUP" {#if !form.delivery}checked{/if}> Ritiro in negozio</label>
+        <label><input type="radio" name="fulfillmentType" value="DELIVERY" {#if form.delivery}checked{/if}> Consegna a domicilio</label>
+        {#if errors.containsKey('fulfillmentType')}<span role="alert">{errors.get('fulfillmentType')}</span>{/if}
+      </fieldset>
+      {#if page.zones}
+      <div>
+        <p>Consegniamo in queste zone:</p>
+        <ul>
+          {#for zone in page.zones}
+          <li>{zone.name} {zone.fee}, minimo {zone.minimum}</li>
+          {/for}
+        </ul>
+      </div>
+      {/if}
+      <fieldset>
+        <legend>Dati per la consegna a domicilio</legend>
+        {#if errors.containsKey('outOfZone')}
+        <p role="alert">{errors.get('outOfZone')}
+          {#if page.whatsappUrl}<a href="{page.whatsappUrl}">Scrivici su WhatsApp</a>{#else if page.phone}Telefono: {page.phone}{/if}
+        </p>
+        {/if}
+        {#if errors.containsKey('minimum')}<p role="alert">{errors.get('minimum')}</p>{/if}
+        <p>
+          <label for="recipientName">Nome del destinatario</label>
+          <input id="recipientName" type="text" name="recipientName" value="{form.recipientName}" maxlength="200">
+          {#if errors.containsKey('recipientName')}<span role="alert">{errors.get('recipientName')}</span>{/if}
+        </p>
+        <p>
+          <label for="recipientPhone">Telefono del destinatario</label>
+          <input id="recipientPhone" type="tel" name="recipientPhone" value="{form.recipientPhone}" maxlength="40">
+          {#if errors.containsKey('recipientPhone')}<span role="alert">{errors.get('recipientPhone')}</span>{/if}
+        </p>
+        <p>
+          <label for="addressLine">Indirizzo</label>
+          <input id="addressLine" type="text" name="addressLine" value="{form.addressLine}" maxlength="200">
+          {#if errors.containsKey('addressLine')}<span role="alert">{errors.get('addressLine')}</span>{/if}
+        </p>
+        <p>
+          <label for="postalCode">CAP</label>
+          <input id="postalCode" type="text" name="postalCode" value="{form.postalCode}" inputmode="numeric" maxlength="5">
+          {#if errors.containsKey('postalCode')}<span role="alert">{errors.get('postalCode')}</span>{/if}
+        </p>
+        <p>
+          <label for="city">Comune</label>
+          <input id="city" type="text" name="city" value="{form.city}" maxlength="200">
+          {#if errors.containsKey('city')}<span role="alert">{errors.get('city')}</span>{/if}
+        </p>
+        <p>
+          <label for="deliveryNotes">Note per la consegna (facoltative)</label>
+          <textarea id="deliveryNotes" name="deliveryNotes" rows="2">{form.deliveryNotes}</textarea>
+          {#if errors.containsKey('deliveryNotes')}<span role="alert">{errors.get('deliveryNotes')}</span>{/if}
+        </p>
+      </fieldset>
       <p>
-        <label for="pickupDate">Giorno di ritiro</label>
+        <label for="pickupDate">Giorno di ritiro o di consegna</label>
         <input id="pickupDate" type="date" name="pickupDate" value="{form.pickupDate}" min="{page.minPickupDate}" required>
         {#if errors.containsKey('pickupDate')}<span role="alert">{errors.get('pickupDate')}</span>{/if}
       </p>

@@ -208,10 +208,14 @@
         ],
         "completato": "2026-10-09T08:39:10Z"
       },
-      "stato": "da-fare",
-      "giri": [],
-      "pr": [],
-      "passato_il": null
+      "stato": "passato",
+      "giri": [
+        "017"
+      ],
+      "pr": [
+        21
+      ],
+      "passato_il": "2026-10-16T10:04:32Z"
     },
     {
       "id": "T8",

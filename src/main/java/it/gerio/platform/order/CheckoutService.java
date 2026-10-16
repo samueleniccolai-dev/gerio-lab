@@ -5,6 +5,8 @@ import it.gerio.platform.cart.CartService;
 import it.gerio.platform.cart.CartService.CartView;
 import it.gerio.platform.cart.CartService.Snapshot;
 import it.gerio.platform.cart.CartService.SnapshotLine;
+import it.gerio.platform.catalog.Prices;
+import it.gerio.platform.delivery.DeliveryZones;
 import it.gerio.platform.legal.TermsDocument;
 import it.gerio.platform.payment.StripeCheckout;
 import it.gerio.platform.payment.StripeCheckout.PaymentUnavailableException;
@@ -19,6 +21,8 @@ import java.time.Clock;
 import java.time.Duration;
 import java.time.Instant;
 import java.time.LocalDate;
+import java.time.LocalTime;
+import java.time.format.DateTimeFormatter;
 import java.time.format.DateTimeParseException;
 import java.util.ArrayList;
 import java.util.Base64;
@@ -47,6 +51,8 @@ import org.jboss.logging.Logger;
 public class CheckoutService {
 
   static final String FULFILLMENT_PICKUP = "PICKUP";
+  static final String FULFILLMENT_DELIVERY = "DELIVERY";
+  private static final DateTimeFormatter CUTOFF_FORMAT = DateTimeFormatter.ofPattern("HH:mm");
   // Stripe wants at least 30 minutes: 31 leaves room for the clock between us and them (§8.3).
   static final Duration SESSION_LIFETIME = Duration.ofMinutes(31);
   // The place stays held a little longer than the session (§7.4).
@@ -56,11 +62,62 @@ public class CheckoutService {
   private static final SecureRandom RANDOM = new SecureRandom();
 
   /** What the customer typed. All strings may be null. */
-  public record Form(String name, String email, String phone, String pickupDate) {}
+  public record Form(
+      String name,
+      String email,
+      String phone,
+      String pickupDate,
+      String fulfillmentType,
+      String recipientName,
+      String recipientPhone,
+      String addressLine,
+      String postalCode,
+      String city,
+      String deliveryNotes) {
 
-  /** What the summary page shows. */
+    /** The form of a first visit: a pickup, nothing typed. */
+    public static Form empty() {
+      return new Form("", "", "", "", FULFILLMENT_PICKUP, "", "", "", "", "", "");
+    }
+
+    public boolean delivery() {
+      return FULFILLMENT_DELIVERY.equals(fulfillmentType);
+    }
+  }
+
+  /** What the summary page shows. {@code whatsappUrl} is null if the shop has no number. */
   public record Page(
-      CartView cart, boolean canPay, String phone, String email, String minPickupDate) {}
+      CartView cart,
+      boolean canPay,
+      String phone,
+      String email,
+      String minPickupDate,
+      List<DeliveryZones.Zone> zones,
+      String whatsappUrl) {}
+
+  /** Where a delivery goes, as saved on the order. */
+  private record Delivery(
+      Long zoneId,
+      long feeCents,
+      String recipientName,
+      String recipientPhone,
+      String addressLine,
+      String postalCode,
+      String city,
+      String notes) {
+
+    static Delivery of(CustomerOrder order) {
+      return new Delivery(
+          order.zoneId,
+          order.deliveryFeeCents,
+          order.recipientName,
+          order.recipientPhone,
+          order.addressLine,
+          order.postalCode,
+          order.city,
+          order.deliveryNotes);
+    }
+  }
 
   public sealed interface Result {
     /** Go to this address (Stripe Checkout). */
@@ -86,6 +143,7 @@ public class CheckoutService {
   @Inject OrderNumbers numbers;
   @Inject OrderStateMachine stateMachine;
   @Inject StripeCheckout stripe;
+  @Inject DeliveryZones deliveryZones;
 
   /** The summary of the cart; empty if there is nothing to order. */
   public Optional<Page> page(String cartToken) {
@@ -96,14 +154,17 @@ public class CheckoutService {
     Optional<ShopProfile.Info> shop = shopProfile.current();
     boolean canPay = canPay(shop);
     // The days of preparation are checked when the form is sent, with the prices.
-    LocalDate earliest = earliestPickup(0);
+    Instant now = clock.instant();
+    LocalDate earliest = earliestPickup(now, 0, closedToday(now, shop.orElse(null)));
     return Optional.of(
         new Page(
             cart,
             canPay,
             shop.map(ShopProfile.Info::phone).orElse(null),
             shop.map(ShopProfile.Info::email).orElse(null),
-            earliest.toString()));
+            earliest.toString(),
+            deliveryZones.active(),
+            shop.map(info -> whatsappUrl(info.whatsapp())).orElse(null)));
   }
 
   public Result checkout(String cartToken, String baseUrl, Form form) {
@@ -115,7 +176,7 @@ public class CheckoutService {
     String tenantId = tenantContext.require().id();
 
     Attempt attempt =
-        QuarkusTransaction.requiringNew().call(() -> prepare(cartToken, form, baseUrl));
+        QuarkusTransaction.requiringNew().call(() -> prepare(cartToken, form, baseUrl, shop.get()));
     if (attempt.early() != null) {
       return attempt.early();
     }
@@ -167,7 +228,7 @@ public class CheckoutService {
     }
   }
 
-  private Attempt prepare(String cartToken, Form form, String baseUrl) {
+  private Attempt prepare(String cartToken, Form form, String baseUrl, ShopProfile.Info shop) {
     Optional<Snapshot> found = cartService.lockedSnapshot(cartToken);
     if (found.isEmpty()) {
       return Attempt.ends(new Result.EmptyCart());
@@ -175,7 +236,8 @@ public class CheckoutService {
     Snapshot cart = found.get();
     Instant now = clock.instant();
     Map<String, String> errors = new LinkedHashMap<>();
-    LocalDate date = validate(form, cart, errors);
+    LocalDate date = validate(form, cart, now, shop, errors);
+    Delivery delivery = form.delivery() ? delivery(form, cart, errors) : null;
     if (!errors.isEmpty()) {
       return Attempt.ends(new Result.Invalid(errors));
     }
@@ -187,12 +249,12 @@ public class CheckoutService {
     List<OrderItem> items = List.of();
     if (order != null) {
       items = OrderItem.list("orderId = ?1 order by id", order.getId());
-      if (!sameOrder(order, items, cart, name, email, phone, date)) {
+      if (!sameOrder(order, items, cart, name, email, phone, date, delivery)) {
         order = null;
       }
     }
     if (order == null) {
-      order = create(cart, name, email, phone, date, now);
+      order = create(cart, name, email, phone, date, delivery, now);
       items = OrderItem.list("orderId = ?1 order by id", order.getId());
     }
 
@@ -214,6 +276,10 @@ public class CheckoutService {
     List<StripeCheckout.Line> lines = new ArrayList<>();
     for (OrderItem item : items) {
       lines.add(new StripeCheckout.Line(item.nameSnapshot, item.unitPriceCents, item.quantity));
+    }
+    if (FULFILLMENT_DELIVERY.equals(order.fulfillmentType) && order.deliveryFeeCents > 0) {
+      String zone = deliveryZones.nameOf(order.zoneId).orElse("");
+      lines.add(new StripeCheckout.Line("Consegna — " + zone, order.deliveryFeeCents, 1));
     }
     return new Attempt(
         null,
@@ -241,8 +307,15 @@ public class CheckoutService {
       String name,
       String email,
       String phone,
-      LocalDate date) {
-    if (!order.customerName.equals(name)
+      LocalDate date,
+      Delivery delivery) {
+    boolean sameDelivery =
+        delivery == null
+            ? FULFILLMENT_PICKUP.equals(order.fulfillmentType)
+            : FULFILLMENT_DELIVERY.equals(order.fulfillmentType)
+                && delivery.equals(Delivery.of(order));
+    if (!sameDelivery
+        || !order.customerName.equals(name)
         || !order.customerEmail.equals(email)
         || !Objects.equals(order.customerPhone, phone)
         || !order.deliveryDate.equals(date)
@@ -262,28 +335,46 @@ public class CheckoutService {
   }
 
   private CustomerOrder create(
-      Snapshot cart, String name, String email, String phone, LocalDate date, Instant now) {
+      Snapshot cart,
+      String name,
+      String email,
+      String phone,
+      LocalDate date,
+      Delivery delivery,
+      Instant now) {
     CurrentTenant.Shop shop = (CurrentTenant.Shop) tenantContext.require();
     int year = now.atZone(shop.timezone()).getYear();
     CustomerOrder order = new CustomerOrder();
     order.cartId = cart.cartId();
     order.number = numbers.next(shop.id(), year);
     order.publicToken = newToken();
-    order.fulfillmentType = FULFILLMENT_PICKUP;
+    order.fulfillmentType = delivery == null ? FULFILLMENT_PICKUP : FULFILLMENT_DELIVERY;
     order.customerName = name;
     order.customerEmail = email;
     order.customerPhone = phone;
     order.deliveryDate = date;
-    long subtotal = 0;
+    long subtotal = subtotal(cart);
     List<VatBreakdown.Line> vat = new ArrayList<>();
     for (SnapshotLine line : cart.lines()) {
-      long total = line.unitCents() * line.quantity();
-      subtotal += total;
-      vat.add(new VatBreakdown.Line(line.vatRateBp(), total));
+      vat.add(new VatBreakdown.Line(line.vatRateBp(), line.unitCents() * line.quantity()));
+    }
+    long fee = 0;
+    if (delivery != null) {
+      fee = delivery.feeCents();
+      order.zoneId = delivery.zoneId();
+      order.recipientName = delivery.recipientName();
+      order.recipientPhone = delivery.recipientPhone();
+      order.addressLine = delivery.addressLine();
+      order.postalCode = delivery.postalCode();
+      order.city = delivery.city();
+      order.deliveryNotes = delivery.notes();
+      // The fee is an accessory service: it follows the rate of the main good (largest line, the
+      // first on a tie). [DA VERIFICARE] for mixed rates: docs/verifiche.md.
+      vat.add(new VatBreakdown.Line(mainRateBp(cart), fee));
     }
     order.subtotalCents = subtotal;
-    order.deliveryFeeCents = 0;
-    order.totalCents = subtotal;
+    order.deliveryFeeCents = fee;
+    order.totalCents = subtotal + fee;
     order.vatBreakdown = VatBreakdown.toJson(vat);
     order.termsVersion = TermsDocument.CURRENT_VERSION;
     order.holdExpiresAt = now.plus(HOLD);
@@ -342,13 +433,38 @@ public class CheckoutService {
     return stripe.configured() && shop.map(ShopProfile.Info::canCharge).orElse(false);
   }
 
-  /** Today in the shop's time zone plus the days of preparation. */
-  private LocalDate earliestPickup(int leadTimeDays) {
+  /** Today in the shop's time zone plus the days of preparation (and a day if orders closed). */
+  private LocalDate earliestPickup(Instant now, int leadTimeDays, boolean closedToday) {
     CurrentTenant.Shop shop = (CurrentTenant.Shop) tenantContext.require();
-    return clock.instant().atZone(shop.timezone()).toLocalDate().plusDays(leadTimeDays);
+    LocalDate today = now.atZone(shop.timezone()).toLocalDate();
+    LocalDate earliest = today.plusDays(leadTimeDays);
+    return closedToday && earliest.equals(today) ? today.plusDays(1) : earliest;
   }
 
-  private LocalDate validate(Form form, Snapshot cart, Map<String, String> errors) {
+  /** True from the cutoff time on (the cutoff itself is already closed); no cutoff, never. */
+  private boolean closedToday(Instant now, ShopProfile.Info shop) {
+    LocalTime cutoff = cutoff(shop);
+    if (cutoff == null) {
+      return false;
+    }
+    CurrentTenant.Shop current = (CurrentTenant.Shop) tenantContext.require();
+    return !now.atZone(current.timezone()).toLocalTime().isBefore(cutoff);
+  }
+
+  private static LocalTime cutoff(ShopProfile.Info shop) {
+    if (shop == null || isBlank(shop.orderCutoff())) {
+      return null;
+    }
+    try {
+      return LocalTime.parse(shop.orderCutoff().strip(), CUTOFF_FORMAT);
+    } catch (DateTimeParseException e) {
+      LOG.warn("Ignoring a malformed orderCutoff in the shop settings");
+      return null;
+    }
+  }
+
+  private LocalDate validate(
+      Form form, Snapshot cart, Instant now, ShopProfile.Info shop, Map<String, String> errors) {
     if (isBlank(form.name()) || form.name().strip().length() > MAX_TEXT) {
       errors.put("customerName", "Scrivi il tuo nome.");
     }
@@ -359,18 +475,105 @@ public class CheckoutService {
     if (form.phone() != null && form.phone().strip().length() > 40) {
       errors.put("customerPhone", "Il numero di telefono è troppo lungo.");
     }
+    if (!FULFILLMENT_PICKUP.equals(form.fulfillmentType()) && !form.delivery()) {
+      errors.put("fulfillmentType", "Scegli ritiro in negozio o consegna a domicilio.");
+    }
     int lead = cart.lines().stream().mapToInt(SnapshotLine::leadTimeDays).max().orElse(0);
-    LocalDate earliest = earliestPickup(lead);
+    boolean closed = closedToday(now, shop);
+    LocalDate earliest = earliestPickup(now, lead, closed);
+    CurrentTenant.Shop current = (CurrentTenant.Shop) tenantContext.require();
+    LocalDate today = now.atZone(current.timezone()).toLocalDate();
     LocalDate date = null;
     try {
       date = isBlank(form.pickupDate()) ? null : LocalDate.parse(form.pickupDate().strip());
     } catch (DateTimeParseException e) {
       date = null;
     }
-    if (date == null || date.isBefore(earliest)) {
+    if (closed && today.equals(date) && !date.isBefore(today.plusDays(lead))) {
+      errors.put(
+          "pickupDate",
+          "Gli ordini per oggi si chiudono alle "
+              + cutoff(shop).format(CUTOFF_FORMAT)
+              + ": scegli un altro giorno.");
+    } else if (date == null || date.isBefore(earliest)) {
       errors.put("pickupDate", "Scegli un giorno di ritiro valido, dal " + earliest + ".");
     }
     return date;
+  }
+
+  /** The address and the zone of a delivery; the zone and its fee come from the database. */
+  private Delivery delivery(Form form, Snapshot cart, Map<String, String> errors) {
+    String recipient = blankToNull(form.recipientName());
+    String recipientPhone = blankToNull(form.recipientPhone());
+    String address = blankToNull(form.addressLine());
+    String postalCode = form.postalCode() == null ? "" : form.postalCode().strip();
+    String city = blankToNull(form.city());
+    String notes = blankToNull(form.deliveryNotes());
+    if (recipient == null || recipient.length() > MAX_TEXT) {
+      errors.put("recipientName", "Scrivi il nome del destinatario.");
+    }
+    if (recipientPhone == null || recipientPhone.length() > 40) {
+      errors.put("recipientPhone", "Scrivi il telefono del destinatario.");
+    }
+    if (address == null || address.length() > MAX_TEXT) {
+      errors.put("addressLine", "Scrivi l'indirizzo di consegna.");
+    }
+    if (!postalCode.matches("\\d{5}")) {
+      errors.put("postalCode", "Scrivi un CAP di 5 cifre.");
+    }
+    if (city == null || city.length() > MAX_TEXT) {
+      errors.put("city", "Scrivi il comune.");
+    }
+    if (notes != null && notes.length() > MAX_TEXT) {
+      errors.put("deliveryNotes", "Le note sono troppo lunghe (al massimo 200 caratteri).");
+    }
+    if (errors.containsKey("recipientName")
+        || errors.containsKey("recipientPhone")
+        || errors.containsKey("addressLine")
+        || errors.containsKey("postalCode")
+        || errors.containsKey("city")
+        || errors.containsKey("deliveryNotes")) {
+      return null;
+    }
+    Optional<DeliveryZones.Zone> found = deliveryZones.find(postalCode, city);
+    if (found.isEmpty()) {
+      errors.put("outOfZone", "Non consegniamo a questo indirizzo.");
+      return null;
+    }
+    DeliveryZones.Zone zone = found.get();
+    // The minimum is on the products only, delivery fee excluded.
+    if (subtotal(cart) < zone.minOrderCents()) {
+      errors.put(
+          "minimum",
+          "Per la zona "
+              + zone.name()
+              + " l'ordine minimo è "
+              + Prices.format(zone.minOrderCents())
+              + ".");
+      return null;
+    }
+    return new Delivery(
+        zone.id(), zone.feeCents(), recipient, recipientPhone, address, postalCode, city, notes);
+  }
+
+  private static long subtotal(Snapshot cart) {
+    return cart.lines().stream().mapToLong(line -> line.unitCents() * line.quantity()).sum();
+  }
+
+  private static int mainRateBp(Snapshot cart) {
+    SnapshotLine main = null;
+    for (SnapshotLine line : cart.lines()) {
+      if (main == null || line.unitCents() * line.quantity() > main.unitCents() * main.quantity()) {
+        main = line;
+      }
+    }
+    return main == null ? 0 : main.vatRateBp();
+  }
+
+  /** Only the digits of the number, in the click-to-chat form; null without a number. */
+  private static String whatsappUrl(String number) {
+    String digits = number == null ? "" : number.replaceAll("\\D", "");
+    return digits.isEmpty() ? null : "https://wa.me/" + digits;
   }
 
   private static boolean isBlank(String text) {

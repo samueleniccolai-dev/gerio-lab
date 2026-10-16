@@ -1,10 +1,10 @@
 ---
 giro: 018
 traguardo: T8
-fase: critica
+fase: accettazione
 inizio: 2026-10-16T10:12:04Z
 ricerca: sì
-accettazione:
+accettazione: Giro018LegalFooterAcceptanceTest, Giro018LegalPagesAcceptanceTest, Giro018LegalIsolationAcceptanceTest
 ripreso: no
 ---
 # Piano del giro 018 — T8: pagine legali minime e piè di pagina completo
@@ -28,6 +28,9 @@ Si aggiungono solo i campi che mancano, le colonne ci sono già da V1:
 | `email`, `phone` | ciao@glicine.example, +39 0583 000000 (ci sono già) |
 | `pec` | **glicine@pec.example** (nuovo) |
 | `rea` | **LU-000000** (nuovo) |
+
+L'upsert aggiorna anche `pec` e `rea` nel `do update set`: in produzione la riga del demo
+esiste già, e un seed che li scrivesse solo all'inserimento non li porterebbe mai lì.
 
 `tax_code` resta vuoto: un codice fiscale plausibile potrebbe coincidere con quello di una persona
 reale, e per una ditta individuale con P. IVA non serve in queste pagine.
@@ -56,11 +59,13 @@ Tutti con Host `demo.localhost` salvo dove detto; il seed del demo è caricato.
 
 - [ ] Piè di pagina su ogni pagina della vetrina: `GET /`, `/catalogo`, `/catalogo/bouquet`,
       `/prodotti/bouquet-di-stagione`, `/carrello`, `/checkout` (con un carrello non vuoto),
-      e le quattro pagine nuove → 200, l'HTML contiene un `<footer>` con «Il Glicine di Lucia Ferri»,
-      «Via dei Fossi 12», «55100 Lucca», «P. IVA IT00000000000», «ciao@glicine.example» e i cinque
-      `href` delle pagine legali. (La home oggi non usa il layout: va portata sul layout.)
+      le quattro pagine nuove, la pagina d'esito `/ordine/esito?session_id=…` e la pagina di stato
+      `/ordine/{token}` di un ordine pagato → 200, l'HTML contiene un solo `<footer>` con
+      «Il Glicine di Lucia Ferri», «Via dei Fossi 12», «55100 Lucca (LU)», «P. IVA IT00000000000»,
+      «ciao@glicine.example», «+39 0583 000000» e i cinque `href` delle pagine legali.
+      (La home oggi non usa il layout: va portata sul layout.)
 - [ ] `GET /informazioni-venditore` → 200, contiene ragione sociale, sede, email, PEC
-      «glicine@pec.example», P. IVA, «REA LU-000000», telefono.
+      «glicine@pec.example», P. IVA, «REA LU-000000», telefono; la sede è «55100 Lucca (LU)».
 - [ ] `GET /privacy` → 200, contiene: titolare «Il Glicine di Lucia Ferri» con email; dati di
       cliente e **destinatario**; basi giuridiche (contratto, obbligo di legge) con riferimento a
       «art. 6» GDPR; conservazione «10 anni» (dati contabili) e «12 mesi» (dati di consegna);
@@ -69,15 +74,19 @@ Tutti con Host `demo.localhost` salvo dove detto; il seed del demo è caricato.
 - [ ] `GET /cookie` → 200, dice che il sito usa solo cookie tecnici, nomina i cookie `cart` e
       quello CSRF con il nome reale (il costruttore lo legge da `Set-Cookie`; atteso `csrf-token`,
       default di Quarkus REST CSRF) e che non ci sono cookie di profilazione né di terze parti.
-      Nessuna pagina della vetrina ha un banner di consenso cookie (assenza della parola «Accetta»).
+      Nessuna pagina GET della vetrina (anche con carrello pieno) manda un `Set-Cookie` con nome
+      diverso da `cart` e `csrf-token`, e la pagina `/cookie` nomina ogni cookie visto.
 - [ ] `GET /accessibilita` → 200, contiene «WCAG 2.1», il livello «AA», lo stato di conformità,
-      l'email del negozio per segnalazioni e una data della dichiarazione.
+      la frase «Stato di conformità», l'email del negozio per segnalazioni e una data `gg/mm/aaaa`.
 - [ ] Isolamento: con Host `fiori-di-marco.localhost` le quattro pagine e il piè di pagina mostrano
-      «Fiori di Marco Srl» e **non** contengono «Il Glicine», «IT00000000000», «glicine@pec.example»;
-      il piè di pagina di Marco non contiene «P. IVA» (campo vuoto).
+      «Fiori di Marco Srl» e **non** contengono «Glicine», «IT00000000000», «glicine@pec.example»,
+      «(LU)»; il piè di pagina di Marco non contiene «P. IVA» (campo vuoto). Ogni pagina si chiede
+      prima al demo e subito dopo a Marco.
 - [ ] Host della piattaforma `localhost`: le quattro pagine → 404.
 - [ ] I testi seguono il dato del negozio, non sono scritti nel template: cambiando via JDBC la
       `pec` del demo in «altra@pec.example», `/informazioni-venditore` la mostra.
+- [ ] Seed: con `pec` e `rea` del demo messi a `null` via JDBC, rieseguire `demo-shop.sql` li
+      riporta a «glicine@pec.example» e «LU-000000», e la pagina venditore li mostra.
 - [ ] `./mvnw -B -ntp verify` verde (test esistenti compresi, ~418).
 - [ ] Dopo il deploy (comando per l'umano, non JUnit):
       `curl -s https://demo.<LAB_BASE_DOMAIN>/privacy | grep -c "Garante"` → ≥ 1.
@@ -104,7 +113,7 @@ Tutti con Host `demo.localhost` salvo dove detto; il seed del demo è caricato.
 | `Giro018LegalIsolationAcceptanceTest` | demo + Marco · GET con Host Marco e con `localhost` · solo dati di Marco; 404 sulla piattaforma |
 
 ## Porte
-- Doppio senso previste: mappare `pec` e `rea` in `Tenant` e in `ShopProfile.Info`;
+- Doppio senso previste: mappare `pec`, `rea` e `province` in `Tenant` e in `ShopProfile.Info`;
   il modo di dare i dati del venditore al layout (per esempio un bean `@Named @RequestScoped` letto
   con `{inject:…}`, oppure un parametro in ogni `@CheckedTemplate`): lo sceglie il costruttore;
   una risorsa `LegalPagesResource` in `storefront`; home sul layout; righe nuove nel seed demo.
@@ -128,9 +137,25 @@ Righe di produzione ≤ 400 (template compresi); file ≤ 12; una sessione.
    minima di una dichiarazione di accessibilità per un privato (modello AgID o EAA).
 
 ## Critica ricevuta e cosa cambia
-(dopo il critico) Accolto: … · Scartato, con motivo: …
+Accolto (3 punti + 2 note sui test):
+1. `province` non arrivava al piè di pagina: si mappa con `pec` e `rea`; i test cercano
+   «55100 Lucca (LU)» nel demo e l'assenza di «(LU)» in Marco.
+2. `pec` e `rea` anche nel `do update set` dell'upsert; test che li azzera e riesegue il seed.
+3. La privacy promette anonimizzazione dopo 12 mesi senza un job: il testo resta (SPEC §12),
+   scadenza «job di anonimizzazione entro 10/2027» in «Idee per dopo» e in PROGRESS.
+4. Il controllo «assenza di Accetta» era debole: sostituito dal controllo dei `Set-Cookie` reali
+   delle pagine GET (solo `cart` e `csrf-token`), legato alla pagina `/cookie`.
+5. Pagina d'esito e pagina di stato ordine aggiunte alla lista del piè di pagina.
+
+Precisato da me: per l'accessibilità il test cerca la frase «Stato di conformità» e una data
+`gg/mm/aaaa` (prima «lo stato» era vago). Scartato: niente.
+
+Rosso: 11 test su 12 falliscono con asserzioni (404 sulle pagine nuove, nessun `<footer>`,
+`tenant.pec` null dopo il seed). Verde già ora: `thePlatformHostHasNoLegalPagesOfAShop`
+(guardia d'isolamento: deve restare 404 anche dopo).
 
 ## Idee per dopo
+- **Scadenza 10/2027:** job che anonimizza i dati di consegna dopo 12 mesi, come promette la privacy.
 - Pagine «Chi siamo», «Consegne e zone», «Contatti», «FAQ» (§2.2).
 - Testi legali in `legal_document` versionati, modificabili dal back-office (R2).
 - Piè di pagina anche nella pagina delle condizioni, con un layout XHTML compatibile col PDF.

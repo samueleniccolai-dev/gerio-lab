@@ -27,5 +27,7 @@ Dopo il merge di #21: giro 018 su T8 (pagine legali minime e rifiniture demo). T
 - Caddy e app potrebbero inviare due `Referrer-Policy` (infra/, giro dedicato).
 - Avviso CI: `ubuntu-latest` passa a Ubuntu 26 dal 19/10 (`.github/` è protetto: decidi tu).
 - Dubbio: FK di V3 senza `tenant_id`; FK variante di V4 senza `on delete`.
+- **Scadenza:** job di anonimizzazione dei dati di consegna entro 10/2027 (la privacy del giro 018
+  promette 12 mesi, SPEC §12; nessun job lo fa ancora).
 
 **Ultimo aggiornamento:** 2026-10-16 — giro 017.

@@ -5,7 +5,11 @@
     <p>{shopName}</p>
     <p>Stato: <strong>{status.statusLabel}</strong></p>
     <p>Data dell'ordine: {status.orderDate}</p>
+    {#if status.delivery}
+    <p>Consegna a domicilio: {status.pickupDate}</p>
+    {#else}
     <p>Ritiro in negozio: {status.pickupDate}</p>
+    {/if}
     <table>
       <thead><tr><th>Articolo</th><th>Quantità</th><th>Prezzo</th><th>Totale</th></tr></thead>
       <tbody>
@@ -14,6 +18,7 @@
       {/for}
       </tbody>
     </table>
+    {#if status.delivery}<p>Consegna: {status.deliveryFee}</p>{/if}
     <p>Totale: <strong>{status.total}</strong></p>
     <p>Per domande sull'ordine:
       {#if status.shopPhone}Telefono: {status.shopPhone}{/if}

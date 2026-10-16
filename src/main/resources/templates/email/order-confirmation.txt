@@ -5,9 +5,10 @@ Ordine {order.number} del {order.orderDate}
 {#for line in order.lines}
 - {line.name} x {line.quantity}: {line.unitPrice} l'uno, {line.lineTotal} (IVA inclusa)
 {/for}
-Totale: {order.total} (IVA inclusa)
+{#if order.delivery}Consegna: {order.deliveryFee}
+{/if}Totale: {order.total} (IVA inclusa)
 Pagamento: Carta
-Ritiro in negozio: {order.pickupDate}
+{#if order.delivery}Consegna a domicilio: {order.pickupDate}{#else}Ritiro in negozio: {order.pickupDate}{/if}
 
 Puoi seguire l'ordine qui:
 {link}

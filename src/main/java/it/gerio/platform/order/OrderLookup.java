@@ -36,6 +36,8 @@ public class OrderLookup {
       boolean expired,
       String orderDate,
       String pickupDate,
+      boolean delivery,
+      String deliveryFee,
       List<StatusLine> lines,
       String total,
       String shopPhone,
@@ -46,6 +48,8 @@ public class OrderLookup {
       String number,
       String orderDate,
       String pickupDate,
+      boolean delivery,
+      String deliveryFee,
       List<StatusLine> lines,
       String total,
       String customerName,
@@ -152,6 +156,8 @@ public class OrderLookup {
             order.status == OrderStatus.EXPIRED,
             DATE.format(order.getCreatedAt().atZone(shop.timezone())),
             DATE.format(order.deliveryDate),
+            isDelivery(order),
+            Prices.format(order.deliveryFeeCents),
             lines,
             Prices.format(order.totalCents),
             info.map(ShopProfile.Info::phone).orElse(null),
@@ -170,12 +176,18 @@ public class OrderLookup {
                     order.number,
                     DATE.format(order.getCreatedAt().atZone(shop.timezone())),
                     DATE.format(order.deliveryDate),
+                    isDelivery(order),
+                    Prices.format(order.deliveryFeeCents),
                     lines(order),
                     Prices.format(order.totalCents),
                     order.customerName,
                     order.customerEmail,
                     order.publicToken,
                     order.termsVersion));
+  }
+
+  private static boolean isDelivery(CustomerOrder order) {
+    return "DELIVERY".equals(order.fulfillmentType);
   }
 
   private static List<StatusLine> lines(CustomerOrder order) {

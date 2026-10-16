@@ -59,7 +59,7 @@ public class CheckoutResource {
     if (page.isEmpty()) {
       return toCart();
     }
-    return Response.ok(render(shop, page.get(), new Form("", "", "", ""), Map.of(), null)).build();
+    return Response.ok(render(shop, page.get(), Form.empty(), Map.of(), null)).build();
   }
 
   @POST
@@ -70,11 +70,32 @@ public class CheckoutResource {
       @FormParam("customerName") String name,
       @FormParam("customerEmail") String email,
       @FormParam("customerPhone") String phone,
-      @FormParam("pickupDate") String pickupDate) {
+      @FormParam("pickupDate") String pickupDate,
+      @FormParam("fulfillmentType") String fulfillmentType,
+      @FormParam("recipientName") String recipientName,
+      @FormParam("recipientPhone") String recipientPhone,
+      @FormParam("addressLine") String addressLine,
+      @FormParam("postalCode") String postalCode,
+      @FormParam("city") String city,
+      @FormParam("deliveryNotes") String deliveryNotes) {
     if (!(tenantContext.require() instanceof CurrentTenant.Shop shop)) {
       return notFound();
     }
-    Form form = new Form(name, email, phone, pickupDate);
+    // No type means a pickup (forms from before the delivery). Zone and fee are never read here.
+    String type = fulfillmentType == null || fulfillmentType.isBlank() ? "PICKUP" : fulfillmentType;
+    Form form =
+        new Form(
+            name,
+            email,
+            phone,
+            pickupDate,
+            type,
+            recipientName,
+            recipientPhone,
+            addressLine,
+            postalCode,
+            city,
+            deliveryNotes);
     Result result = checkoutService.checkout(token, baseUrl(uriInfo), form);
     return switch (result) {
       case Result.Redirect redirect -> Response.seeOther(URI.create(redirect.url())).build();
@@ -106,7 +127,14 @@ public class CheckoutResource {
             nullToEmpty(form.name()),
             nullToEmpty(form.email()),
             nullToEmpty(form.phone()),
-            nullToEmpty(form.pickupDate()));
+            nullToEmpty(form.pickupDate()),
+            form.fulfillmentType(),
+            nullToEmpty(form.recipientName()),
+            nullToEmpty(form.recipientPhone()),
+            nullToEmpty(form.addressLine()),
+            nullToEmpty(form.postalCode()),
+            nullToEmpty(form.city()),
+            nullToEmpty(form.deliveryNotes()));
     return Templates.checkout(shop.displayName(), page, shown, errors, error).render();
   }
 

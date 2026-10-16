@@ -54,6 +54,10 @@ I segreti del deploy stanno nell'**environment `produzione`** (Settings → Envi
 | `DEPLOY_SSH_KEY` | segreto di `produzione` | il contenuto **intero** di `~/.ssh/lab_deploy`, da `-----BEGIN` a `-----END` |
 | `DEPLOY_KNOWN_HOSTS` | segreto di `produzione` | la riga `known_hosts` del server, verificata (niente fiducia al primo contatto) |
 | `LAB_BASE_DOMAIN` | variabile del repository | `gerio-lab.samueleniccolai.com` |
+| `GERIO_SMTP_USER` | segreto di `produzione` | login SMTP di Brevo (§5), opzionale |
+| `GERIO_SMTP_PASSWORD` | segreto di `produzione` | chiave SMTP di Brevo (§5), opzionale |
+| `GERIO_SMTP_HOST`, `GERIO_SMTP_PORT` | variabili di `produzione` | `smtp-relay.brevo.com`, `587` (§5) |
+| `GERIO_MAIL_FROM`, `GERIO_MAIL_ENABLED` | variabili di `produzione` | mittente verificato in Brevo; `true` per accendere l'invio (§5) |
 
 ### 0.6 Come verifico che ha funzionato
 ```bash
@@ -128,8 +132,42 @@ Se il webhook non arriva (dashboard Stripe → Webhook → Consegne):
 Con il segreto configurato `infra/smoke.sh` pretende 400 dal webhook: 503 lo fa fallire con un messaggio «webhook».
 Rinvio di un evento (dashboard → Rinvia): deve dare 200 senza cambiare l'ordine (idempotenza).
 
-## 5. Email in spam o rimbalzate
-*(da scrivere con il traguardo T6)*
+## 5. Email d'ordine (Brevo)
+Le email di conferma partono dall'outbox (`outbox_message`, canale `EMAIL`) via SMTP. In produzione
+l'invio è **spento** finché `GERIO_MAIL_ENABLED` non è `true`.
+
+**Impostazione (una volta, dell'umano):**
+1. Account Brevo, mittente (o dominio) verificato; SPF e DKIM del dominio mittente come indicato da Brevo.
+2. Brevo → SMTP e API → chiave SMTP. Login e chiave sono due valori diversi.
+3. GitHub → environment `produzione`: segreti `GERIO_SMTP_USER`, `GERIO_SMTP_PASSWORD`; variabili
+   `GERIO_SMTP_HOST` (`smtp-relay.brevo.com`), `GERIO_SMTP_PORT` (`587`), `GERIO_MAIL_FROM` (il mittente
+   verificato), `GERIO_MAIL_ENABLED` (`true`).
+4. In `.github/workflows/consegna.yml` passare le sei variabili al passo di deploy (come per Stripe).
+   `infra/deploy.sh` le legge dall'ambiente, tutte facoltative; i segreti viaggiano su stdin, il resto
+   come argomenti (contratto: `infra/README.md`). Non sono mai stampati.
+5. Un deploy (merge su `main` o `consegna` a mano) le porta nel `.env` del server e ad `app`.
+   Un valore già scritto nel `.env` del server non si toglie togliendo il segreto o la variabile da
+   GitHub (il deploy scrive solo i valori presenti). Per spegnere l'invio imposta `GERIO_MAIL_ENABLED=false`.
+
+**Verifica:** fai un ordine di prova con la carta `4242 4242 4242 4242` (§4), con un'email tua. Poi:
+```sql
+select id, status, attempts, last_error, created_at from outbox_message
+ where channel = 'EMAIL' order by id desc limit 5;
+```
+Atteso: `status = 'SENT'` entro un minuto circa e l'email nella casella (controlla anche lo spam).
+
+**Rotazione della chiave:** crea la nuova chiave in Brevo, aggiorna il segreto `GERIO_SMTP_PASSWORD`,
+lancia `consegna` con `deploy=true`, ripeti la verifica, poi disattiva la vecchia chiave in Brevo.
+
+| Sintomo | Causa probabile | Cosa fare |
+|---|---|---|
+| Nessuna riga `EMAIL` in outbox | ordine non pagato o webhook non arrivato | §4 |
+| `PENDING` che non si muove | `GERIO_MAIL_ENABLED` non `true` | variabile e nuovo deploy |
+| `FAILED`/tentativi, `last_error` con 535 o «authentication» | login o chiave SMTP sbagliati o revocati | rigenera la chiave, aggiorna i segreti, deploy |
+| `last_error` con «connect» o «timeout» | host o porta sbagliati, porta bloccata | `smtp-relay.brevo.com` e `587` |
+| `SENT` ma non arriva | in spam, mittente non verificato, SPF/DKIM mancanti | log di Brevo, verifica mittente e dominio |
+| Rimbalza | indirizzo del cliente sbagliato | log di Brevo; l'ordine resta valido |
+| Deploy esce con 2 e «invalid GERIO_…» | valore non valido (porta non numerica, enabled né `true` né `false`, spazi o virgolette) | correggi la variabile |
 
 ## 6. La catena dei giri si è fermata
 1. Guarda le PR aperte con etichetta `giro`: `domanda`, `revisione-umana` o `bloccato` dicono chi

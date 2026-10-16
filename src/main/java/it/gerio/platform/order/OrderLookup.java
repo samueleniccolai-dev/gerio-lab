@@ -50,7 +50,8 @@ public class OrderLookup {
       String total,
       String customerName,
       String customerEmail,
-      String token) {}
+      String token,
+      String termsVersion) {}
 
   /** The page reloads itself every 2 seconds up to this many times (30 seconds). */
   static final int MAX_RELOADS = 15;
@@ -173,7 +174,8 @@ public class OrderLookup {
                     Prices.format(order.totalCents),
                     order.customerName,
                     order.customerEmail,
-                    order.publicToken));
+                    order.publicToken,
+                    order.termsVersion));
   }
 
   private static List<StatusLine> lines(CustomerOrder order) {

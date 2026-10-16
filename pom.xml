@@ -87,6 +87,13 @@
             <artifactId>stripe-java</artifactId>
             <version>34.0.0</version>
         </dependency>
+        <!-- Giro 016 (T6): PDF of the terms of sale attached to the confirmation, SPEC 9.2.
+             Approved by a human (DECISIONI n. 38). LGPL 2.1+. -->
+        <dependency>
+            <groupId>io.github.openhtmltopdf</groupId>
+            <artifactId>openhtmltopdf-pdfbox</artifactId>
+            <version>1.1.97</version>
+        </dependency>
         <!-- Giro 003 (T2): real-browser E2E and screenshots, SPEC §14. Approved by a human. -->
         <dependency>
             <groupId>com.microsoft.playwright</groupId>

@@ -12,6 +12,8 @@ Ritiro in negozio: {order.pickupDate}
 Puoi seguire l'ordine qui:
 {link}
 
+Le condizioni di vendita (versione {order.termsVersion}) sono in allegato.
+
 Venditore
 {seller.legalName}
 {seller.addressLine}

@@ -1,7 +1,7 @@
 ---
 giro: 020
 traguardo: fine
-fase: piano
+fase: chiusura
 inizio: 2026-10-16T12:26:06Z
 ricerca: no
 accettazione:

@@ -1,7 +1,7 @@
 ---
 giro: 019
 traguardo: T6
-fase: piano
+fase: chiusura
 inizio: 2026-10-16T11:58:39Z
 ricerca: no
 accettazione:

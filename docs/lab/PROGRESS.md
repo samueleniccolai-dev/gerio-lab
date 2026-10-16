@@ -2,19 +2,19 @@
 
 **Obiettivo:** traguardi T1–T8 di `docs/lab/traguardi.json` — demo in produzione con ordine
 end-to-end in Stripe test, lo stesso piano di Gerio al 4/10/2026.
-**Giro corrente:** 019 · **Fase:** chiusura · **PR aperta:** #24 · **Blocchi:** nessuno
+**Giro corrente:** 020 · **Fase:** chiusura · **PR aperta:** #25 · **Blocchi:** nessuno
 **T0 del laboratorio:** 2026-10-11T09:43:32Z
 
 ## Prossimo
 
-Dopo il merge di #24 tutti i traguardi sono `passato`: il giro successivo è la fine dell'esperimento (METODO §13).
+**Esperimento concluso** (16/10/2026): vedi `docs/lab/CONCLUSIONI.md`. `docs/lab/STOP` ferma la catena dopo il merge di #25.
 
 ## Ultimi giri
 
+- 020 — fine dell'esperimento: CONCLUSIONI.md e STOP; nessun codice. PR #25.
 - 019 — T6 passato: email di conferma con PDF arrivata in produzione (Brevo, 16/10); nessun codice. PR #24.
 - 018 — T8 passato: 4 pagine legali e piè di pagina completo, senza banner cookie; 430 test. PR #23.
 - 017 — T7 passato: zone di consegna per CAP/comune, minimo, orario limite, IVA e riga Stripe; 418 test. PR #21.
-- 016 — T6 in-corso: pagina e PDF delle condizioni + cablaggio SMTP/Brevo in `infra/`; 391 test. PR #20 (revisione umana: `pom.xml`).
 
 ## Per l'umano
 

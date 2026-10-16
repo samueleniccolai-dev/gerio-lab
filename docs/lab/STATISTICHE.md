@@ -1,6 +1,6 @@
 # Statistiche — laboratorio (metodo v3) contro Gerio (metodo v2)
 
-> Generato da `scripts/metrics/statistiche.py` il 2026-10-16 12:00 UTC. Dati: `metrics/giri.csv`, `metrics/baseline-gerio.csv`. Definizioni e cautele: `docs/ESPERIMENTO.md`.
+> Generato da `scripts/metrics/statistiche.py` il 2026-10-16 12:27 UTC. Dati: `metrics/giri.csv`, `metrics/baseline-gerio.csv`. Definizioni e cautele: `docs/ESPERIMENTO.md`.
 >
 > T0 di Gerio: 2026-10-04 14:06 UTC · T0 del laboratorio: 2026-10-11T09:43:32Z · traguardi passati dal laboratorio: 8 su 8.
 
@@ -16,7 +16,7 @@ decisione registrata più le domande bloccanti, nel laboratorio ratifiche più p
 | T3 Catalogo + pagina prodotto, con dati finti da fioraia ✅ | 24,7 ↔ 12,0 | 1 ↔ 3 | 30 ↔ 0 | 8 ↔ 2 | 1 ↔ 0 | 12,7 ↔ 7,2 | 971 ↔ 581 |
 | T4 Carrello ✅ | 32,3 ↔ 21,1 | 1 ↔ 2 | 35 ↔ 2 | 11 ↔ 3 | 0 ↔ 0 | 14,8 ↔ 2,6 | 672 ↔ 470 |
 | T5 Checkout con Stripe Checkout in test + webhook idempotente ✅ | 73,2 ↔ 98,5 | 2 ↔ 4 | 25 ↔ 32 | 25 ↔ 6 | 0 ↔ 1 | 12,9 ↔ 18,3 | 2.237 ↔ 1.794 |
-| T6 Email di conferma + pagina stato ordine ✅ | 102,3 ↔ 119,7 | 2 ↔ 4 | 40 ↔ 4 | 19 ↔ 6 | 1 ↔ 1 | 31,1 ↔ 14,1 | 1.201 ↔ 907 |
+| T6 Email di conferma + pagina stato ordine ✅ | 102,3 ↔ 122,7 | 2 ↔ 4 | 40 ↔ 4 | 19 ↔ 6 | 1 ↔ 1 | 31,1 ↔ 17,8 | 1.201 ↔ 907 |
 | T7 Zone di consegna e orario limite, versione semplice ✅ | 114,5 ↔ 120,4 | 1 ↔ 1 | 20 ↔ 0 | 16 ↔ 1 | 1 ↔ 0 | 24,6 ↔ 3,2 | 1.100 ↔ 531 |
 | T8 Pagine legali minime + rifiniture demo ✅ | — ↔ 121,0 | 0 ↔ 1 | — ↔ 0 | — ↔ 0 | — ↔ 0 | — ↔ 3,9 | — ↔ 185 |
 
@@ -56,7 +56,8 @@ Gerio, cicli senza stima dei minuti umani nel rapporto: 6. I minuti umani dei lo
 | 016 | T6 | mergiata | #20 | 236 | no | 1 | 2 | 2/3 | 2 |
 | 017 | T7 | mergiata | #21 | 35 | sì | 0 | 4 | 4/4 | 0 |
 | 018 | T8 | mergiata | #23 | 26 | sì | 0 | 2 | 3/3 | 0 |
-| 019 | T6 | aperta | #24 | 0 | — | 0 | 0 | 0/0 | 0 |
+| 019 | T6 | mergiata | #24 | 0 | no | 0 | 0 | 0/0 | 0 |
+| 020 | — | aperta | #25 | — | — | 0 | 0 | 0/0 | 0 |
 
 Merge fuori catena (PR di un giro entrate in main senza i controlli né la revisione umana): 1 (008).
 

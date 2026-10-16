@@ -1,8 +1,8 @@
 # Statistiche — laboratorio (metodo v3) contro Gerio (metodo v2)
 
-> Generato da `scripts/metrics/statistiche.py` il 2026-10-16 10:06 UTC. Dati: `metrics/giri.csv`, `metrics/baseline-gerio.csv`. Definizioni e cautele: `docs/ESPERIMENTO.md`.
+> Generato da `scripts/metrics/statistiche.py` il 2026-10-16 10:39 UTC. Dati: `metrics/giri.csv`, `metrics/baseline-gerio.csv`. Definizioni e cautele: `docs/ESPERIMENTO.md`.
 >
-> T0 di Gerio: 2026-10-04 14:06 UTC · T0 del laboratorio: 2026-10-11T09:43:32Z · traguardi passati dal laboratorio: 6 su 8.
+> T0 di Gerio: 2026-10-04 14:06 UTC · T0 del laboratorio: 2026-10-11T09:43:32Z · traguardi passati dal laboratorio: 7 su 8.
 
 ## Traguardo per traguardo
 
@@ -17,8 +17,8 @@ decisione registrata più le domande bloccanti, nel laboratorio ratifiche più p
 | T4 Carrello ✅ | 32,3 ↔ 21,1 | 1 ↔ 2 | 35 ↔ 2 | 11 ↔ 3 | 0 ↔ 0 | 14,8 ↔ 2,6 | 672 ↔ 470 |
 | T5 Checkout con Stripe Checkout in test + webhook idempotente ✅ | 73,2 ↔ 98,5 | 2 ↔ 4 | 25 ↔ 32 | 25 ↔ 6 | 0 ↔ 1 | 12,9 ↔ 18,3 | 2.237 ↔ 1.794 |
 | T6 Email di conferma + pagina stato ordine | 102,3 ↔ — | 2 ↔ 3 | 40 ↔ 4 | 19 ↔ 6 | 1 ↔ 1 | 31,1 ↔ 14,0 | 1.201 ↔ 907 |
-| T7 Zone di consegna e orario limite, versione semplice ✅ | 114,5 ↔ — | 1 ↔ 1 | 20 ↔ 0 | 16 ↔ 1 | 1 ↔ 0 | 24,6 ↔ 0,1 | 1.100 ↔ 531 |
-| T8 Pagine legali minime + rifiniture demo | — ↔ — | 0 ↔ 0 | — ↔ — | — ↔ — | — ↔ — | — ↔ — | — ↔ — |
+| T7 Zone di consegna e orario limite, versione semplice ✅ | 114,5 ↔ 120,4 | 1 ↔ 1 | 20 ↔ 0 | 16 ↔ 1 | 1 ↔ 0 | 24,6 ↔ 3,2 | 1.100 ↔ 531 |
+| T8 Pagine legali minime + rifiniture demo ✅ | — ↔ — | 0 ↔ 1 | — ↔ 0 | — ↔ 0 | — ↔ 0 | — ↔ 0,1 | — ↔ 185 |
 
 Gerio fuori dal piano del 4/10: 5 cicli (5, 11, 12, 13, 14), 4.077 righe in src/main, 110 minuti umani stimati, 55 decisioni.
 
@@ -28,11 +28,11 @@ Gerio, cicli senza stima dei minuti umani nel rapporto: 6. I minuti umani dei lo
 
 | # | Ipotesi | Laboratorio | Gerio | Esito |
 |---|---|---|---|---|
-| H1 | minuti umani ≤ 50% di Gerio | 36 | 165 | in linea (22%) |
-| H2 | ≤ 5 decisioni all'umano per traguardo | 2,3 | 11,7 | in linea |
+| H1 | minuti umani ≤ 50% di Gerio | 36 | — | dati insufficienti |
+| H2 | ≤ 5 decisioni all'umano per traguardo | 2,0 | — | in linea |
 | H3 | difetti dopo il merge ≤ Gerio | 0 giri di correzione (`difetto_di`) | non misurato in Gerio | da valutare alla fine |
 | H4 | deriva < 10% delle righe di produzione | 0,0% | 31,1% | in linea |
-| H5 | ore fino a T7 ≤ Gerio (secondaria) | — | 114,5 | dati insufficienti |
+| H5 | ore fino a T7 ≤ Gerio (secondaria) | 120,4 | 114,5 | non in linea |
 
 ## Giri del laboratorio
 
@@ -54,7 +54,8 @@ Gerio, cicli senza stima dei minuti umani nel rapporto: 6. I minuti umani dei lo
 | 014 | T6 | mergiata | #18 | 24 | sì | 0 | 2 | 3/3 | 0 |
 | 015 | T6 | mergiata | #19 | 35 | no | 0 | 2 | 2/3 | 2 |
 | 016 | T6 | mergiata | #20 | 236 | no | 1 | 2 | 2/3 | 2 |
-| 017 | T7 | aperta | #21 | 35 | — | 0 | 4 | 4/4 | 0 |
+| 017 | T7 | mergiata | #21 | 35 | sì | 0 | 4 | 4/4 | 0 |
+| 018 | T8 | aperta | #23 | 26 | — | 0 | 2 | 3/3 | 0 |
 
 Merge fuori catena (PR di un giro entrate in main senza i controlli né la revisione umana): 1 (008).
 

@@ -2,22 +2,23 @@
 
 **Obiettivo:** traguardi T1–T8 di `docs/lab/traguardi.json` — demo in produzione con ordine
 end-to-end in Stripe test, lo stesso piano di Gerio al 4/10/2026.
-**Giro corrente:** 017 · **Fase:** chiusura · **PR aperta:** #21 · **Blocchi:** nessuno
+**Giro corrente:** 018 · **Fase:** chiusura · **PR aperta:** #23 · **Blocchi:** nessuno
 **T0 del laboratorio:** 2026-10-11T09:43:32Z
 
 ## Prossimo
 
-Dopo il merge di #21: giro 018 su T8 (pagine legali minime e rifiniture demo). T6 attende azioni umane.
+Dopo il merge di #23 tutti i traguardi tranne T6 sono passati; T6 attende azioni umane (Brevo). Poi §13 (fine dell'esperimento).
 
 ## Ultimi giri
 
+- 018 — T8 passato: 4 pagine legali e piè di pagina completo, senza banner cookie; 430 test. PR #23.
 - 017 — T7 passato: zone di consegna per CAP/comune, minimo, orario limite, IVA e riga Stripe; 418 test. PR #21.
 - 016 — T6 in-corso: pagina e PDF delle condizioni + cablaggio SMTP/Brevo in `infra/`; 391 test. PR #20 (revisione umana: `pom.xml`).
 - 015 — T6 in-corso: coda `outbox_message`, worker e email di conferma (invio spento in prod); 374 test. PR #19 (revisione umana: `pom.xml`).
-- 014 — T6 in-corso: pagina `/ordine/{token}` senza dati personali; 361 test. PR #18.
 
 ## Per l'umano
 
+- Far leggere a un consulente i testi legali del giro 018 (art. 14 par. 5, esenzione EAA, Stripe/Connect: [DA VERIFICARE]).
 - **Brevo:** dominio autenticato e variabili in `produzione`. Manca: le 6 righe in `.github/workflows/consegna.yml` (contratto in `infra/README.md`), poi `GERIO_MAIL_ENABLED=true`.
 - Ratifiche n. 46 (IVA consegna), n. 35 (timer Vert.x), n. 36 (invio spento in prod), n. 39 (cache PDF non invalidata).
 - Controllare il formato `wa.me` (FAQ WhatsApp troncata) e l'IVA con aliquote miste.
@@ -30,4 +31,4 @@ Dopo il merge di #21: giro 018 su T8 (pagine legali minime e rifiniture demo). T
 - **Scadenza:** job di anonimizzazione dei dati di consegna entro 10/2027 (la privacy del giro 018
   promette 12 mesi, SPEC §12; nessun job lo fa ancora).
 
-**Ultimo aggiornamento:** 2026-10-16 — giro 017.
+**Ultimo aggiornamento:** 2026-10-16 — giro 018.

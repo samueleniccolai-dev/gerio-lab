@@ -1,7 +1,7 @@
 ---
 giro: 018
 traguardo: T8
-fase: revisione
+fase: chiusura
 inizio: 2026-10-16T10:12:04Z
 ricerca: sì
 accettazione: 9fe38f4

@@ -1,6 +1,6 @@
 # Statistiche — laboratorio (metodo v3) contro Gerio (metodo v2)
 
-> Generato da `scripts/metrics/statistiche.py` il 2026-10-16 12:27 UTC. Dati: `metrics/giri.csv`, `metrics/baseline-gerio.csv`. Definizioni e cautele: `docs/ESPERIMENTO.md`.
+> Generato da `scripts/metrics/statistiche.py` il 2026-10-17 09:02 UTC. Dati: `metrics/giri.csv`, `metrics/baseline-gerio.csv`. Definizioni e cautele: `docs/ESPERIMENTO.md`.
 >
 > T0 di Gerio: 2026-10-04 14:06 UTC · T0 del laboratorio: 2026-10-11T09:43:32Z · traguardi passati dal laboratorio: 8 su 8.
 
@@ -11,12 +11,12 @@ decisione registrata più le domande bloccanti, nel laboratorio ratifiche più p
 
 | Traguardo | Ore dal T0 | Cicli ↔ giri | Minuti umani | Decisioni all'umano | Rilavorazioni | Minuti di CI | Righe in src/main |
 |---|---|---|---|---|---|---|---|
-| T1 Binari, parte 1: deploy automatico ✅ | 6,7 ↔ 5,8 | 1 ↔ 2 | 30 ↔ 0 | 6 ↔ 1 | 3 ↔ 0 | 6,9 ↔ 3,6 | 0 ↔ 0 |
-| T2 Binari, parte 2: verifica visiva ✅ | 19,4 ↔ 8,5 | 1 ↔ 2 | 25 ↔ 2 | 4 ↔ 1 | 0 ↔ 0 | 8,6 ↔ 4,5 | 0 ↔ 0 |
-| T3 Catalogo + pagina prodotto, con dati finti da fioraia ✅ | 24,7 ↔ 12,0 | 1 ↔ 3 | 30 ↔ 0 | 8 ↔ 2 | 1 ↔ 0 | 12,7 ↔ 7,2 | 971 ↔ 581 |
-| T4 Carrello ✅ | 32,3 ↔ 21,1 | 1 ↔ 2 | 35 ↔ 2 | 11 ↔ 3 | 0 ↔ 0 | 14,8 ↔ 2,6 | 672 ↔ 470 |
-| T5 Checkout con Stripe Checkout in test + webhook idempotente ✅ | 73,2 ↔ 98,5 | 2 ↔ 4 | 25 ↔ 32 | 25 ↔ 6 | 0 ↔ 1 | 12,9 ↔ 18,3 | 2.237 ↔ 1.794 |
-| T6 Email di conferma + pagina stato ordine ✅ | 102,3 ↔ 122,7 | 2 ↔ 4 | 40 ↔ 4 | 19 ↔ 6 | 1 ↔ 1 | 31,1 ↔ 17,8 | 1.201 ↔ 907 |
+| T1 Binari, parte 1: deploy automatico ✅ | 6,7 ↔ 5,8 | 1 ↔ 2 | 30 ↔ 10 | 6 ↔ 1 | 3 ↔ 0 | 6,9 ↔ 3,6 | 0 ↔ 0 |
+| T2 Binari, parte 2: verifica visiva ✅ | 19,4 ↔ 8,5 | 1 ↔ 2 | 25 ↔ 12 | 4 ↔ 1 | 0 ↔ 0 | 8,6 ↔ 4,5 | 0 ↔ 0 |
+| T3 Catalogo + pagina prodotto, con dati finti da fioraia ✅ | 24,7 ↔ 12,0 | 1 ↔ 3 | 30 ↔ 5 | 8 ↔ 2 | 1 ↔ 0 | 12,7 ↔ 7,2 | 971 ↔ 581 |
+| T4 Carrello ✅ | 32,3 ↔ 21,1 | 1 ↔ 2 | 35 ↔ 7 | 11 ↔ 3 | 0 ↔ 0 | 14,8 ↔ 2,6 | 672 ↔ 470 |
+| T5 Checkout con Stripe Checkout in test + webhook idempotente ✅ | 73,2 ↔ 98,5 | 2 ↔ 4 | 25 ↔ 117 | 25 ↔ 6 | 0 ↔ 1 | 12,9 ↔ 18,3 | 2.237 ↔ 1.794 |
+| T6 Email di conferma + pagina stato ordine ✅ | 102,3 ↔ 122,7 | 2 ↔ 4 | 40 ↔ 139 | 19 ↔ 6 | 1 ↔ 1 | 31,1 ↔ 17,8 | 1.201 ↔ 907 |
 | T7 Zone di consegna e orario limite, versione semplice ✅ | 114,5 ↔ 120,4 | 1 ↔ 1 | 20 ↔ 0 | 16 ↔ 1 | 1 ↔ 0 | 24,6 ↔ 3,2 | 1.100 ↔ 531 |
 | T8 Pagine legali minime + rifiniture demo ✅ | — ↔ 121,0 | 0 ↔ 1 | — ↔ 0 | — ↔ 0 | — ↔ 0 | — ↔ 3,9 | — ↔ 185 |
 
@@ -28,7 +28,7 @@ Gerio, cicli senza stima dei minuti umani nel rapporto: 6. I minuti umani dei lo
 
 | # | Ipotesi | Laboratorio | Gerio | Esito |
 |---|---|---|---|---|
-| H1 | minuti umani ≤ 50% di Gerio | 40 | — | dati insufficienti |
+| H1 | minuti umani ≤ 50% di Gerio | 290 | — | dati insufficienti |
 | H2 | ≤ 5 decisioni all'umano per traguardo | 2,5 | — | in linea |
 | H3 | difetti dopo il merge ≤ Gerio | 0 giri di correzione (`difetto_di`) | non misurato in Gerio | da valutare alla fine |
 | H4 | deriva < 10% delle righe di produzione | 0,0% | 31,1% | in linea |
@@ -38,26 +38,26 @@ Gerio, cicli senza stima dei minuti umani nel rapporto: 6. I minuti umani dei lo
 
 | Giro | Traguardo | Esito | PR | Minuti | Merge automatico | Bloccanti | Dubbi | Mutazioni prese/provate | Minuti umani |
 |---|---|---|---|---|---|---|---|---|---|
-| 001 | T1 | mergiata | #2 | 26 | no | 0 | 4 | 2/3 | 0 |
+| 001 | T1 | mergiata | #2 | 26 | no | 0 | 4 | 2/3 | 10 |
 | 002 | T1 | mergiata | #3 | 7 | sì | 0 | 1 | 0/0 | 0 |
-| 003 | T2 | mergiata | #5 | 129 | no | 0 | 3 | 3/3 | 2 |
-| 004 | T2 | mergiata | #7 | 3 | no | 0 | 0 | 0/0 | 0 |
+| 003 | T2 | mergiata | #5 | 129 | no | 0 | 3 | 3/3 | 7 |
+| 004 | T2 | mergiata | #7 | 3 | no | 0 | 0 | 0/0 | 5 |
 | 005 | T3 | mergiata | #8 | 21 | sì | 0 | 2 | 3/3 | 0 |
-| 006 | T3 | mergiata | #9 | 18 | no | 0 | 1 | 3/3 | 0 |
+| 006 | T3 | mergiata | #9 | 18 | no | 0 | 1 | 3/3 | 5 |
 | 007 | T3 | mergiata | #10 | 7 | sì | 0 | 2 | 0/0 | 0 |
-| 008 | T4 | mergiata | #11 | 27 | no | 0 | 3 | 4/4 | 2 |
+| 008 | T4 | mergiata | #11 | 27 | no | 0 | 3 | 4/4 | 7 |
 | 009 | T4 | mergiata | #12 | 6 | sì | 0 | 1 | 0/0 | 0 |
-| 010 | T5 | mergiata | #13 | 38 | no | 0 | 4 | 3/4 | 2 |
+| 010 | T5 | mergiata | #13 | 38 | no | 0 | 4 | 3/4 | 7 |
 | 011 | T5 | mergiata | #14 | 42 | sì | 0 | 4 | 3/5 | 0 |
-| 012 | T5 | mergiata | #15 | 31 | no | 0 | 3 | 3/3 | 0 |
-| 013 | T5 | mergiata | #17 | 116 | no | 1 | 1 | 1/1 | 30 |
+| 012 | T5 | mergiata | #15 | 31 | no | 0 | 3 | 3/3 | 5 |
+| 013 | T5 | mergiata | #17 | 116 | no | 1 | 1 | 1/1 | 105 |
 | 014 | T6 | mergiata | #18 | 24 | sì | 0 | 2 | 3/3 | 0 |
-| 015 | T6 | mergiata | #19 | 35 | no | 0 | 2 | 2/3 | 2 |
-| 016 | T6 | mergiata | #20 | 236 | no | 1 | 2 | 2/3 | 2 |
+| 015 | T6 | mergiata | #19 | 35 | no | 0 | 2 | 2/3 | 7 |
+| 016 | T6 | mergiata | #20 | 236 | no | 1 | 2 | 2/3 | 97 |
 | 017 | T7 | mergiata | #21 | 35 | sì | 0 | 4 | 4/4 | 0 |
 | 018 | T8 | mergiata | #23 | 26 | sì | 0 | 2 | 3/3 | 0 |
-| 019 | T6 | mergiata | #24 | 0 | no | 0 | 0 | 0/0 | 0 |
-| 020 | — | aperta | #25 | — | — | 0 | 0 | 0/0 | 0 |
+| 019 | T6 | mergiata | #24 | 0 | no | 0 | 0 | 0/0 | 35 |
+| 020 | fine | mergiata | #25 | 2 | no | 0 | 0 | 0/0 | 5 |
 
 Merge fuori catena (PR di un giro entrate in main senza i controlli né la revisione umana): 1 (008).
 

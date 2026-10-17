@@ -16,7 +16,7 @@
         <quarkus.platform.version>3.33.4</quarkus.platform.version>
         <skipITs>true</skipITs>
         <surefire-plugin.version>3.6.0</surefire-plugin.version>
-        <spotless-plugin.version>3.10.3</spotless-plugin.version>
+        <spotless-plugin.version>3.10.4</spotless-plugin.version>
         <google-java-format.version>1.36.1</google-java-format.version>
         <!-- A property, not inline: .claude/hooks/session-start.sh reads it to give cloud sessions
              the Chromium build this Playwright version expects. -->

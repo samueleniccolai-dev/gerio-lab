@@ -20,7 +20,7 @@
         <google-java-format.version>1.36.1</google-java-format.version>
         <!-- A property, not inline: .claude/hooks/session-start.sh reads it to give cloud sessions
              the Chromium build this Playwright version expects. -->
-        <playwright.version>1.63.0</playwright.version>
+        <playwright.version>1.64.0</playwright.version>
     </properties>
 
     <dependencyManagement>

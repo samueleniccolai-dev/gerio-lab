@@ -92,7 +92,7 @@
         <dependency>
             <groupId>io.github.openhtmltopdf</groupId>
             <artifactId>openhtmltopdf-pdfbox</artifactId>
-            <version>1.1.97</version>
+            <version>1.1.103</version>
         </dependency>
         <!-- Giro 003 (T2): real-browser E2E and screenshots, SPEC §14. Approved by a human. -->
         <dependency>
